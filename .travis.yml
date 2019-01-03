@@ -4,9 +4,14 @@ go:
     - 1.9.x
     - 1.10.x
     - 1.11.x
-
+    
+before_install:
+  - go get github.com/mattn/goveralls
+  
 script:
     - go build ./...
     - ./ci/check_go_fmt.sh
     - go test -v ./...
 
+script:
+  - $HOME/gopath/bin/goveralls -v -service=travis-ci
