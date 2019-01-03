@@ -1,0 +1,12 @@
+language: go
+
+go:
+    - 1.9.x
+    - 1.10.x
+    - 1.11.x
+
+script:
+    - go build ./...
+    - ./ci.check_go_fmt.sh
+    - go test -v ./...
+
