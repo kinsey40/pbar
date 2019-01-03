@@ -22,6 +22,7 @@ func TestAddValue(t *testing.T) {
 		{1, 3, 4, true},
 		{10, 5, 15, true},
 		{10, 6, 21, false},
+		{1, 7, 10, false},
 	}
 
 	for _, tCase := range testCases {
