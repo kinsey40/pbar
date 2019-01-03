@@ -7,6 +7,6 @@ go:
 
 script:
     - go build ./...
-    - ./ci.check_go_fmt.sh
+    - ./ci/check_go_fmt.sh
     - go test -v ./...
 
