@@ -3,12 +3,12 @@
 
  */
 
-package tqdm_test
+package render_test
 
 import (
 	"testing"
 
-	. "github.com/kinsey40/tqdm/tqdm"
+	. "github.com/kinsey40/tqdm/render"
 	"github.com/stretchr/testify/assert"
 )
 
