@@ -79,10 +79,10 @@ func (itr *Iterator) createIteratorFromObject(values ...interface{}) (err error)
 	object := values[0]
 
 	itr.start = 0.0
-	itr.stop = float64(reflect.ValueOf(object).Len()) + 1.0
+	itr.stop = float64(reflect.ValueOf(object).Len())
 	itr.step = 1.0
 	itr.current = 0.0
-	itr.renderObj = render.MakeRenderObject(itr.start, float64(reflect.ValueOf(object).Len()))
+	itr.renderObj = render.MakeRenderObject(itr.start, itr.stop, itr.step)
 
 	return err
 }
@@ -112,7 +112,7 @@ func (itr *Iterator) createIteratorFromValues(values ...interface{}) (err error)
 	default:
 		return errors.New(fmt.Sprintf("Values have incorrect length: %d, expect length of 1, 2, or 3", len(values)))
 	}
-	itr.renderObj = render.MakeRenderObject(itr.start, itr.stop)
+	itr.renderObj = render.MakeRenderObject(itr.start, itr.stop, itr.step)
 
 	return nil
 }
@@ -220,9 +220,8 @@ func CreateIterator(values ...interface{}) (*Iterator, error) {
 }
 
 func (itr *Iterator) Update() error {
-	fmt.Println(itr.start, itr.current, itr.stop, itr.step)
-	itr.renderObj.Update(itr.current)
 	itr.current += itr.step
+	itr.renderObj.Update(itr.current)
 
 	if itr.current > itr.stop {
 		return StopIterationError

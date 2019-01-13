@@ -18,6 +18,7 @@ type RenderObject struct {
 	startValue               float64
 	currentValue             float64
 	endValue                 float64
+	stepValue                float64
 	startTime                time.Time
 	prefix                   string
 	iterationFinishedSymbol  string
@@ -27,11 +28,12 @@ type RenderObject struct {
 	rParen                   string
 }
 
-func MakeRenderObject(startValue, endValue float64) *RenderObject {
+func MakeRenderObject(startValue, endValue, stepValue float64) *RenderObject {
 	renderObj := new(RenderObject)
 	renderObj.w = os.Stdout
 	renderObj.startValue = startValue
 	renderObj.currentValue = startValue
+	renderObj.stepValue = stepValue
 	renderObj.endValue = endValue
 	renderObj.iterationFinishedSymbol = "#"
 	renderObj.remainingIterationSymbol = "-"
@@ -48,7 +50,7 @@ func MakeRenderObject(startValue, endValue float64) *RenderObject {
 }
 
 func (r *RenderObject) Update(currentValue float64) error {
-	if currentValue == r.startValue {
+	if currentValue == r.startValue+r.stepValue {
 		r.startTime = time.Now()
 	}
 
@@ -113,25 +115,32 @@ func (r *RenderObject) formatProgressBar() string {
 		strings.Repeat(r.remainingIterationSymbol, r.lineSize-numStepsComplete),
 		r.rParen)
 
-	statistics := fmt.Sprintf("%.1f/%.1f %5.2f%%", r.currentValue, r.endValue, percentage)
+	statistics := fmt.Sprintf("%.1f/%.1f %.2f%%", r.currentValue, r.endValue, percentage)
 	speedMeter := r.formatSpeedMeter()
 	progressBar := strings.Join([]string{r.prefix, bar, statistics, speedMeter}, " ")
+	fmt.Println(progressBar)
 
-	return progressBar
+	return ""
+
+	// return progressBar
 }
 
 func (r *RenderObject) formatSpeedMeter() string {
 	var rate float64
+	var remainingTime time.Duration
 	elapsed := time.Now().Sub(r.startTime)
-	remainingTime := time.Duration((elapsed.Seconds()/r.currentValue-r.startValue)*(r.endValue-(r.currentValue-r.startValue))) * time.Second
 
-	if r.currentValue != r.startValue {
+	ratio := (r.currentValue - r.startValue) / (r.endValue - r.currentValue - r.startValue)
+	if r.currentValue > r.startValue+r.stepValue {
 		rate = float64(r.endValue) / elapsed.Seconds()
+		remainingTime = time.Duration((elapsed.Seconds() * ratio)) * time.Second
+		// remainingTime = time.Duration((elapsed.Seconds()/(r.currentValue-r.startValue))*(r.endValue-(r.currentValue-r.startValue))) * time.Second
 	} else {
 		rate = 0.0
+		remainingTime = time.Duration(0.0 * time.Second)
 	}
 
-	return fmt.Sprintf("[elapsed: %s, left: %s, %5.2f iters/sec]",
+	return fmt.Sprintf("[elapsed: %s, left: %s, %.2f iters/sec]",
 		formatTime(elapsed),
 		formatTime(remainingTime),
 		rate)
