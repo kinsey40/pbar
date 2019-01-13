@@ -28,3 +28,21 @@ func TestUpdate(t *testing.T) {
 	// Need to test the update method, need to
 	// mock out the Iterator
 }
+
+func TestCheckSameTypesTrue(t *testing.T) {
+
+}
+
+func TestIsNumber(t *tetsing.T)
+
+func TestCheckNumbers(t *testing.T) {
+
+}
+
+func TestAcceptableObjects(t *testing.T) {
+
+}
+
+func TestConvertToFloatValue(t *testing.T) {
+
+}
