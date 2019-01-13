@@ -1,7 +1,34 @@
 /*
-
-
-
+ * The MIT License
+ *
+ * Copyright 2018 kinsey40.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ *
+ * File:   iterate.go
+ * Author: kinsey40
+ *
+ * Created on 13 January 2019, 11:05
+ *
+ * The iterate package enables the user to create an iterate object which will
+ * call updates to the render object.
+ *
  */
 
 package iterate
@@ -32,6 +59,13 @@ var objectTypes = []reflect.Kind{
 	reflect.String,
 }
 var floatType = reflect.TypeOf(float64(0))
+var StopIterationError = errors.New("Stop Iteration error")
+
+type IteratorInterface interface {
+	createIteratorFromObject(...interface{}) error
+	createIteratorFromValues(...interface{}) error
+	Update() error
+}
 
 type Iterator struct {
 	start     float64
@@ -41,85 +75,49 @@ type Iterator struct {
 	renderObj *render.RenderObject
 }
 
-func (itr *Iterator) createIteratorFromObject(object interface{}) (err error) {
+func (itr *Iterator) createIteratorFromObject(values ...interface{}) (err error) {
+	object := values[0]
+
 	itr.start = 0.0
-	itr.stop = float64(reflect.ValueOf(object).Len())
+	itr.stop = float64(reflect.ValueOf(object).Len()) + 1.0
 	itr.step = 1.0
 	itr.current = 0.0
-	itr.renderObj = render.MakeRenderObject(float64(reflect.ValueOf(object).Len()))
+	itr.renderObj = render.MakeRenderObject(itr.start, float64(reflect.ValueOf(object).Len()))
 
 	return err
 }
 
-func (itr *Iterator) createIteratorFromOneValues(values ...interface{}) (err error) {
-	itr.start = 0.0
+func (itr *Iterator) createIteratorFromValues(values ...interface{}) (err error) {
 	itr.step = 1.0
-	itr.current = 0.0
-	itr.renderObj = render.MakeRenderObject(itr.stop)
+	floatValues := make([]float64, 0)
 
-	if stopValue, err := convertToFloatValue(values[0]); err != nil {
-		return err
-	} else {
-		itr.stop = stopValue
+	for _, value := range values {
+		if floatValue, err := convertToFloatValue(value); err != nil {
+			return err
+		} else {
+			floatValues = append(floatValues, floatValue)
+		}
 	}
+
+	switch len(floatValues) {
+	case 1:
+		itr.stop = floatValues[0]
+	case 2:
+		itr.start = floatValues[0]
+		itr.stop = floatValues[1]
+	case 3:
+		itr.start = floatValues[0]
+		itr.stop = floatValues[1]
+		itr.step = floatValues[2]
+	default:
+		return errors.New(fmt.Sprintf("Values have incorrect length: %d, expect length of 1, 2, or 3", len(values)))
+	}
+	itr.renderObj = render.MakeRenderObject(itr.start, itr.stop)
 
 	return nil
 }
 
-func (itr *Iterator) createIteratorFromTwoValues(values ...interface{}) (err error) {
-	itr.step = 1.0
-	itr.current = 0.0
-	itr.renderObj = render.MakeRenderObject(itr.stop)
-
-	if startValue, err := convertToFloatValue(values[0]); err != nil {
-		return err
-	} else {
-		itr.start = startValue
-	}
-
-	if stopValue, err := convertToFloatValue(values[1]); err != nil {
-		return err
-	} else {
-		itr.stop = stopValue
-	}
-
-	if incorrectValues := itr.start > itr.stop; incorrectValues {
-		return errors.New("Start value is greater than stop value!")
-	}
-
-	return nil
-}
-
-func (itr *Iterator) createIteratorFromThreeValues(values ...interface{}) (err error) {
-	itr.current = 0.0
-	itr.renderObj = render.MakeRenderObject(itr.stop)
-
-	if startValue, err := convertToFloatValue(values[0]); err != nil {
-		return err
-	} else {
-		itr.start = startValue
-	}
-
-	if stopValue, err := convertToFloatValue(values[1]); err != nil {
-		return err
-	} else {
-		itr.stop = stopValue
-	}
-
-	if stepValue, err := convertToFloatValue(values[2]); err != nil {
-		return err
-	} else {
-		itr.step = stepValue
-	}
-
-	if incorrectValues := itr.start > itr.stop; incorrectValues {
-		return errors.New("Start value is greater than stop value!")
-	}
-
-	return err
-}
-
-func checkSameTypes(values ...interface{}) error {
+func checkTypes(values ...interface{}) (reflect.Type, error) {
 	err := *new(error)
 	prevType := *new(reflect.Type)
 
@@ -130,42 +128,10 @@ func checkSameTypes(values ...interface{}) error {
 				err = errors.New(fmt.Sprintf("Value types are not the same: %v and %v", prevType, valueType))
 			}
 		}
+		prevType = valueType
 	}
 
-	return err
-}
-
-func checkNumbers(values ...interface{}) error {
-	for _, value := range values {
-		number := isNumber(value)
-		if !number {
-			return errors.New(fmt.Sprintf("Number is of incoorect type, value: %v, type: %v", reflect.ValueOf(value), reflect.TypeOf(value)))
-		}
-	}
-
-	return nil
-}
-
-func isNumber(value interface{}) bool {
-	valueIsNumber := false
-	for _, numberType := range numberTypes {
-		if reflect.ValueOf(value).Type().Kind() == numberType {
-			valueIsNumber = true
-		}
-	}
-
-	return valueIsNumber
-}
-
-func acceptableObject(value interface{}) bool {
-	acceptableObj := false
-	for _, objectType := range objectTypes {
-		if reflect.ValueOf(value).Type().Kind() == objectType {
-			acceptableObj = true
-		}
-	}
-
-	return acceptableObj
+	return prevType, err
 }
 
 func convertToFloatValue(value interface{}) (float64, error) {
@@ -181,50 +147,85 @@ func convertToFloatValue(value interface{}) (float64, error) {
 	return floatValue.Float(), nil
 }
 
-func CreateIterator(values ...interface{}) (*Iterator, error) {
-	var itr *Iterator
-	var err error
+func isNumber(type_ reflect.Type) bool {
+	isNumber := false
+	for _, numberType := range numberTypes {
+		if type_.Kind() == numberType {
+			isNumber = true
+		}
+	}
 
-	if err = checkSameTypes(values); err != nil {
+	return isNumber
+}
+
+func isObject(type_ reflect.Type) bool {
+	isObj := false
+	for _, objectType := range objectTypes {
+		if type_.Kind() == objectType {
+			isObj = true
+		}
+	}
+
+	return isObj
+}
+
+func objectOrNumber(type_ reflect.Type, values ...interface{}) (bool, error) {
+	if isNum := isNumber(type_); isNum {
+		err := checkSize(false, values...)
+		return true, err
+	}
+
+	if isObj := isObject(type_); isObj {
+		err := checkSize(true, values...)
+		return false, err
+	}
+
+	return false, errors.New(fmt.Sprintf("Type: %v is not as expected!", type_))
+}
+
+func checkSize(isObject bool, values ...interface{}) error {
+	if isObject && len(values) != 1 {
+		return errors.New("Must only pass a single valid object!")
+	}
+
+	if !isObject && (len(values) < 1 || len(values) > 3) {
+		return errors.New("Expect 1, 2 or 3 parameters (stop); (start, stop) or (start, stop, step)")
+	}
+
+	return nil
+}
+
+func CreateIterator(values ...interface{}) (*Iterator, error) {
+	var err error
+	var type_ reflect.Type
+	itr := new(Iterator)
+
+	if type_, err = checkTypes(values...); err != nil {
 		return itr, err
 	}
 
-	switch len(values) {
-	case 1:
-		if isNumber(values[0]) {
-			err = itr.createIteratorFromObject(values)
-		} else if acceptableObject(values[0]) {
-			err = itr.createIteratorFromOneValues(values)
-		} else {
-			err = errors.New(fmt.Sprintf("Incorrect type (%v) for parameter", reflect.TypeOf(values[0])))
-		}
+	if num, err := objectOrNumber(type_, values...); err != nil {
+		return itr, err
+	} else if num {
+		itr.createIteratorFromValues(values...)
+	} else {
+		itr.createIteratorFromObject(values...)
+	}
 
-	case 2:
-		if err = checkNumbers(values); err != nil {
-			return itr, err
-		}
-
-		err = itr.createIteratorFromTwoValues(values)
-
-	case 3:
-		if err = checkNumbers(values); err != nil {
-			return itr, err
-		}
-
-		err = itr.createIteratorFromThreeValues(values)
-
-	default:
-		err = errors.New("Expect 1, 2 or 3 parameters (stop); (start, stop) or (start, stop, step)")
+	if itr.start > itr.stop {
+		return itr, errors.New(fmt.Sprintf("Start value (%v) is less than stop value (%v)!", itr.start, itr.stop))
 	}
 
 	return itr, err
 }
 
 func (itr *Iterator) Update() error {
+	fmt.Println(itr.start, itr.current, itr.stop, itr.step)
+	itr.renderObj.Update(itr.current)
 	itr.current += itr.step
 
-	if itr.current >= itr.stop {
-		return errors.New("Stop Iteration error")
+	if itr.current > itr.stop {
+		return StopIterationError
 	}
 
 	return nil
