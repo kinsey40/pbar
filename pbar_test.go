@@ -21,30 +21,29 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  *
- * File:   tqdm_test.go
+ * File:   pbar_test.go
  * Author: kinsey40
  *
  * Created on 13 January 2019, 11:05
  *
- * The test file for the tqdm package.
+ * The test file for the Pbar package.
  *
  */
 
-package tqdm_test
+package pbar_test
 
 import (
 	"fmt"
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/kinsey40/tqdm/mocks"
 )
 
 func TestDescription(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
-	mockTqdmInterface := mocks.NewMockTqdmInterface(mockCtrl)
+	mockPbarInterface := mocks.NewMockPbarInterface(mockCtrl)
 	testCases := []struct {
 		description    string
 		expectedReturn string
@@ -56,18 +55,18 @@ func TestDescription(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		mockTqdmInterface.EXPECT().SetDescription(testCase.description).Return().Times(1)
-		mockTqdmInterface.EXPECT().GetDescription().Return(testCase.description).Times(1)
+		mockPbarInterface.EXPECT().SetDescription(testCase.description).Return().Times(1)
+		mockPbarInterface.EXPECT().GetDescription().Return(testCase.description).Times(1)
 
-		mockTqdmInterface.SetDescription(testCase.description)
-		desc := mockTqdmInterface.GetDescription()
+		mockPbarInterface.SetDescription(testCase.description)
+		desc := mockPbarInterface.GetDescription()
 
 		if desc != testCase.expectedReturn && testCase.correct {
-			t.Error(fmt.Sprintf("Incorrect description returned: %v, expected: %v", desc, testCase.expectedReturn))
+			t.Fail(fmt.Sprintf("Incorrect description returned: %v, expected: %v", desc, testCase.expectedReturn))
 		}
 
 		if desc == testCase.expectedReturn && !testCase.correct {
-			t.Error(fmt.Sprintf("Incorrect description returned: %v, expected: %v", desc, testCase.expectedReturn))
+			t.Fail(fmt.Sprintf("Incorrect description returned: %v, expected: %v", desc, testCase.expectedReturn))
 		}
 	}
 }
@@ -76,7 +75,7 @@ func TestRetain(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
-	mockTqdmInterface := mocks.NewMockTqdmInterface(mockCtrl)
+	mockPbarInterface := mocks.NewMockPbarInterface(mockCtrl)
 	testCases := []struct {
 		retain         bool
 		expectedReturn bool
@@ -89,18 +88,18 @@ func TestRetain(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		mockTqdmInterface.EXPECT().SetRetain(testCase.retain).Return().Times(1)
-		mockTqdmInterface.EXPECT().GetRetain().Return(testCase.retain).Times(1)
+		mockPbarInterface.EXPECT().SetRetain(testCase.retain).Return().Times(1)
+		mockPbarInterface.EXPECT().GetRetain().Return(testCase.retain).Times(1)
 
-		mockTqdmInterface.SetRetain(testCase.retain)
-		ret := mockTqdmInterface.GetRetain()
+		mockPbarInterface.SetRetain(testCase.retain)
+		ret := mockPbarInterface.GetRetain()
 
 		if ret != testCase.expectedReturn && testCase.correct {
-			t.Error(fmt.Sprintf("Incorrect description returned: %v, expected: %v", ret, testCase.expectedReturn))
+			t.Fail(fmt.Sprintf("Incorrect description returned: %v, expected: %v", ret, testCase.expectedReturn))
 		}
 
 		if ret == testCase.expectedReturn && !testCase.correct {
-			t.Error(fmt.Sprintf("Incorrect description returned: %v, expected: %v", ret, testCase.expectedReturn))
+			t.Fail(fmt.Sprintf("Incorrect description returned: %v, expected: %v", ret, testCase.expectedReturn))
 		}
 	}
 }

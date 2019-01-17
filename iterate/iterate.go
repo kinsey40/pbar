@@ -36,29 +36,11 @@ package iterate
 import (
 	"errors"
 	"fmt"
-	"math"
 	"reflect"
 
-	"github.com/kinsey40/tqdm/render"
+	"github.com/kinsey40/pbar/render"
 )
 
-var numberTypes = []reflect.Kind{
-	reflect.Int8,
-	reflect.Int16,
-	reflect.Int32,
-	reflect.Int64,
-	reflect.Int,
-	reflect.Float32,
-	reflect.Float64,
-}
-var objectTypes = []reflect.Kind{
-	reflect.Map,
-	reflect.Array,
-	reflect.Chan,
-	reflect.Slice,
-	reflect.String,
-}
-var floatType = reflect.TypeOf(float64(0))
 var StopIterationError = errors.New("Stop Iteration error")
 
 type IteratorInterface interface {
@@ -68,119 +50,93 @@ type IteratorInterface interface {
 }
 
 type Iterator struct {
-	start     float64
-	stop      float64
-	step      float64
-	current   float64
-	renderObj *render.RenderObject
+	Start     float64
+	Stop      float64
+	Step      float64
+	Current   float64
+	RenderObj *render.RenderObject
 }
 
-func (itr *Iterator) createIteratorFromObject(values ...interface{}) (err error) {
-	object := values[0]
-
-	itr.start = 0.0
-	itr.stop = float64(reflect.ValueOf(object).Len())
-	itr.step = 1.0
-	itr.current = 0.0
-	itr.renderObj = render.MakeRenderObject(itr.start, itr.stop, itr.step)
+func (itr *Iterator) createIteratorFromObject(object interface{}) (err error) {
+	itr.Start = 0.0
+	itr.Stop = float64(reflect.ValueOf(object).Len())
+	itr.Step = 1.0
+	itr.Current = 0.0
 
 	return err
 }
 
 func (itr *Iterator) createIteratorFromValues(values ...interface{}) (err error) {
-	itr.step = 1.0
+	itr.Step = 1.0
 	floatValues := make([]float64, 0)
 
 	for _, value := range values {
-		if floatValue, err := convertToFloatValue(value); err != nil {
-			return err
-		} else {
-			floatValues = append(floatValues, floatValue)
-		}
+		floatValues = append(floatValues, convertToFloatValue(value))
 	}
 
 	switch len(floatValues) {
 	case 1:
-		itr.stop = floatValues[0]
+		itr.Stop = floatValues[0]
 	case 2:
-		itr.start = floatValues[0]
-		itr.stop = floatValues[1]
+		itr.Start = floatValues[0]
+		itr.Stop = floatValues[1]
 	case 3:
-		itr.start = floatValues[0]
-		itr.stop = floatValues[1]
-		itr.step = floatValues[2]
+		itr.Start = floatValues[0]
+		itr.Stop = floatValues[1]
+		itr.Step = floatValues[2]
 	default:
 		return errors.New(fmt.Sprintf("Values have incorrect length: %d, expect length of 1, 2, or 3", len(values)))
 	}
-	itr.renderObj = render.MakeRenderObject(itr.start, itr.stop, itr.step)
 
 	return nil
 }
 
-func checkTypes(values ...interface{}) (reflect.Type, error) {
-	err := *new(error)
-	prevType := *new(reflect.Type)
+func convertToFloatValue(value interface{}) float64 {
+	floatValue := reflect.Indirect(reflect.ValueOf(value)).Convert(reflect.TypeOf(*new(float64))).Float()
 
-	for index, value := range values {
-		valueType := reflect.ValueOf(value).Type()
-		if index > 1 {
-			if prevType != valueType {
-				err = errors.New(fmt.Sprintf("Value types are not the same: %v and %v", prevType, valueType))
-			}
+	return floatValue
+}
+
+func isConvertibleToFloat(v interface{}) bool {
+	return reflect.TypeOf(v).ConvertibleTo(reflect.TypeOf(*new(float64)))
+}
+
+func isValidObject(v interface{}) bool {
+	validObj := true
+	defer func() {
+		if r := recover(); r != nil {
+			validObj = false
 		}
-		prevType = valueType
-	}
+	}()
+	reflect.ValueOf(v).Len()
 
-	return prevType, err
+	return validObj
 }
 
-func convertToFloatValue(value interface{}) (float64, error) {
-	newValue := reflect.ValueOf(value)
-	newValue = reflect.Indirect(newValue)
+func objectOrNumber(values ...interface{}) (bool, error) {
+	var isNumber bool
+	var err error
 
-	if !newValue.Type().ConvertibleTo(floatType) {
-		return math.NaN(), errors.New(fmt.Sprintf("Cannot convert %v to float64", newValue.Type()))
-	}
-
-	floatValue := newValue.Convert(floatType)
-
-	return floatValue.Float(), nil
-}
-
-func isNumber(type_ reflect.Type) bool {
-	isNumber := false
-	for _, numberType := range numberTypes {
-		if type_.Kind() == numberType {
+	for index, v := range values {
+		if isConvertibleToFloat(v) {
 			isNumber = true
+			if index >= 1 && !isNumber {
+				err = errors.New("Mixed value types!")
+				break
+			}
+		} else if isValidObject(v) {
+			isNumber = false
+			if index >= 1 && isNumber {
+				err = errors.New("Mixed value types!")
+				break
+			}
+		} else {
+			err = errors.New(fmt.Sprintf("Type: %v is not as number or valid object!", reflect.TypeOf(v)))
+			break
 		}
 	}
 
-	return isNumber
-}
-
-func isObject(type_ reflect.Type) bool {
-	isObj := false
-	for _, objectType := range objectTypes {
-		if type_.Kind() == objectType {
-			isObj = true
-		}
-	}
-
-	return isObj
-}
-
-func objectOrNumber(type_ reflect.Type, values ...interface{}) (bool, error) {
-	if isNum := isNumber(type_); isNum {
-		err := checkSize(false, values...)
-		return true, err
-	}
-
-	if isObj := isObject(type_); isObj {
-		err := checkSize(true, values...)
-		return false, err
-	}
-
-	return false, errors.New(fmt.Sprintf("Type: %v is not as expected!", type_))
+	return isNumber, err
 }
 
 func checkSize(isObject bool, values ...interface{}) error {
@@ -196,34 +152,44 @@ func checkSize(isObject bool, values ...interface{}) error {
 }
 
 func CreateIterator(values ...interface{}) (*Iterator, error) {
-	var err error
-	var type_ reflect.Type
 	itr := new(Iterator)
 
-	if type_, err = checkTypes(values...); err != nil {
+	isObject, err := objectOrNumber(values...)
+	if err != nil {
 		return itr, err
 	}
 
-	if num, err := objectOrNumber(type_, values...); err != nil {
+	if err := checkSize(isObject, values); err != nil {
 		return itr, err
-	} else if num {
-		itr.createIteratorFromValues(values...)
+	}
+
+	if isObject {
+		itr.createIteratorFromObject(values[0])
 	} else {
-		itr.createIteratorFromObject(values...)
+		itr.createIteratorFromValues(values...)
 	}
 
-	if itr.start > itr.stop {
-		return itr, errors.New(fmt.Sprintf("Start value (%v) is less than stop value (%v)!", itr.start, itr.stop))
+	itr.RenderObj = render.MakeRenderObject(itr.Start, itr.Stop, itr.Step)
+	if itr.Start > itr.Stop {
+		return itr, errors.New(fmt.Sprintf("Start value (%v) is less than stop value (%v)!", itr.Start, itr.Stop))
 	}
 
 	return itr, err
 }
 
-func (itr *Iterator) Update() error {
-	itr.current += itr.step
-	itr.renderObj.Update(itr.current)
+func (itr *Iterator) GetRenderObject() (*render.RenderObject, error) {
+	if itr.RenderObj == nil {
+		return nil, errors.New("Render Object has not been initialised!")
+	}
 
-	if itr.current > itr.stop {
+	return itr.RenderObj, nil
+}
+
+func (itr *Iterator) Update() error {
+	itr.RenderObj.Update(itr.Current)
+	itr.Current += itr.Step
+
+	if itr.Current > itr.Stop {
 		return StopIterationError
 	}
 

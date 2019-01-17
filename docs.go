@@ -3,4 +3,4 @@
 
  */
 
-package tqdm
+package pbar

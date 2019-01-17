@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  *
- * File:   tqdm_test.go
+ * File:   iterate_test.go
  * Author: kinsey40
  *
  * Created on 13 January 2019, 11:05
@@ -32,7 +32,9 @@
 
 package iterate_test
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestMakeIteratorFromObject(t *testing.T) {
 	// Objects:
@@ -41,43 +43,20 @@ func TestMakeIteratorFromObject(t *testing.T) {
 	// Strings
 	// Slices
 	// Channels
-
 }
 
 func TestMakeIteratorFromValues(t *testing.T) {
-	// Check that the iterator is created appropriately
-	// from the start, stop, step methods
+
+}
+
+func TestCreateIterator(t *testing.T) {
+
+}
+
+func TestGetRenderObj(t *testing.T) {
+
 }
 
 func TestUpdate(t *testing.T) {
-	// Need to test the update method, need to
-	// mock out the Iterator
-}
-
-func TestCheckSameTypesTrue(t *testing.T) {
-
-}
-
-func TestIsNumber(t *testing.T) {
-
-}
-
-func TestCheckNumbers(t *testing.T) {
-
-}
-
-func TestAcceptableObjects(t *testing.T) {
-
-}
-
-func TestConvertToFloatValue(t *testing.T) {
-
-}
-
-func TestCreateIteratorFromOneValues(t *testing.T) {
-
-}
-
-func TestCreateIteratorFromTwoValues(t *testing.T) {
 
 }

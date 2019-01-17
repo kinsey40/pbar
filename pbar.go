@@ -21,24 +21,22 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  *
- * File:   tqdm.go
+ * File:   pbar.go
  * Author: kinsey40
  *
  * Created on 13 January 2019, 11:05
  *
- * The main file for the tqdm package, this enables the creation of the tqdm
+ * The main file for the pbar package, this enables the creation of the pbar
  * object. The user can then edit the specific variables associated with the
  * object.
  *
  */
 
-package tqdm
+package pbar
 
-import (
-	"github.com/kinsey40/tqdm/iterate"
-)
+import "github.com/kinsey40/pbar/iterate"
 
-type TqdmInterface interface {
+type PbarInterface interface {
 	Update()
 	SetDescription(string)
 	GetDescription() string
@@ -46,46 +44,55 @@ type TqdmInterface interface {
 	GetRetain() bool
 }
 
-type TqdmSettings struct {
+type PbarSettings struct {
 	Iterator    *iterate.Iterator
 	Description string
+	Size        int
 	Retain      bool
 }
 
-func Tqdm(values ...interface{}) *TqdmSettings {
-	tqdmObj := new(TqdmSettings)
-	tqdmObj.Description = ""
-	tqdmObj.Retain = false
+func Pbar(values ...interface{}) (*PbarSettings, error) {
+	var err error
+	pbarObj := new(PbarSettings)
+	pbarObj.Description = ""
+	pbarObj.Retain = false
 
 	if itr, err := iterate.CreateIterator(values...); err != nil {
-		panic(err)
+		return nil, err
 	} else {
-		tqdmObj.Iterator = itr
+		pbarObj.Iterator = itr
 	}
 
-	return tqdmObj
+	return pbarObj, err
 }
 
-func (tqdmObj *TqdmSettings) Update() {
-	err := tqdmObj.Iterator.Update()
+func (pbarObj *PbarSettings) Update() {
+	err := pbarObj.Iterator.Update()
 
 	if err != nil && err != iterate.StopIterationError {
 		panic(err)
 	}
 }
 
-func (tqdmObj *TqdmSettings) SetDescription(description string) {
-	tqdmObj.Description = description
+func (pbarObj *PbarSettings) SetDescription(description string) {
+	pbarObj.Description = description
+	renderObj, err := pbarObj.Iterator.GetRenderObject()
+
+	if err != nil {
+		panic(err)
+	}
+
+	renderObj.SetPrefix(pbarObj.Description)
 }
 
-func (tqdmObj *TqdmSettings) GetDescription() string {
-	return tqdmObj.Description
+func (pbarObj *PbarSettings) GetDescription() string {
+	return pbarObj.Description
 }
 
-func (tqdmObj *TqdmSettings) SetRetain(retain bool) {
-	tqdmObj.Retain = retain
+func (pbarObj *PbarSettings) SetRetain(retain bool) {
+	pbarObj.Retain = retain
 }
 
-func (tqdmObj *TqdmSettings) GetRetain() bool {
-	return tqdmObj.Retain
+func (pbarObj *PbarSettings) GetRetain() bool {
+	return pbarObj.Retain
 }

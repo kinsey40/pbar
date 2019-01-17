@@ -1,6 +1,34 @@
 /*
-
-
+ * The MIT License
+ *
+ * Copyright 2018 kinsey40.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ *
+ * File:   tqdm.go
+ * Author: kinsey40
+ *
+ * Created on 13 January 2019, 11:05
+ *
+ * Render performs the acutual rendering of the progress bar onto the
+ * terminal display.
+ *
  */
 
 package render
@@ -8,6 +36,7 @@ package render
 import (
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"strings"
 	"time"
@@ -22,6 +51,7 @@ type RenderObject struct {
 	startTime                time.Time
 	prefix                   string
 	iterationFinishedSymbol  string
+	currentIterationSymbol   string
 	remainingIterationSymbol string
 	lineSize                 int
 	lParen                   string
@@ -35,7 +65,8 @@ func MakeRenderObject(startValue, endValue, stepValue float64) *RenderObject {
 	renderObj.currentValue = startValue
 	renderObj.stepValue = stepValue
 	renderObj.endValue = endValue
-	renderObj.iterationFinishedSymbol = "#"
+	renderObj.iterationFinishedSymbol = "="
+	renderObj.currentIterationSymbol = ">"
 	renderObj.remainingIterationSymbol = "-"
 	renderObj.lParen = "|"
 	renderObj.rParen = "|"
@@ -50,7 +81,7 @@ func MakeRenderObject(startValue, endValue, stepValue float64) *RenderObject {
 }
 
 func (r *RenderObject) Update(currentValue float64) error {
-	if currentValue == r.startValue+r.stepValue {
+	if currentValue == r.startValue {
 		r.startTime = time.Now()
 	}
 
@@ -109,41 +140,38 @@ func (r *RenderObject) formatProgressBar() string {
 	percentage := ratio * 100.0
 
 	numStepsComplete := int(ratio * float64(r.lineSize))
-	bar := fmt.Sprintf("%s%s%s%s",
+
+	bar := fmt.Sprintf("%s%s%s%s%s",
 		r.lParen,
 		strings.Repeat(r.iterationFinishedSymbol, numStepsComplete),
-		strings.Repeat(r.remainingIterationSymbol, r.lineSize-numStepsComplete),
+		strings.Repeat(r.currentIterationSymbol, 1),
+		strings.Repeat(r.remainingIterationSymbol, int(r.endValue)-numStepsComplete),
 		r.rParen)
 
 	statistics := fmt.Sprintf("%.1f/%.1f %.2f%%", r.currentValue, r.endValue, percentage)
 	speedMeter := r.formatSpeedMeter()
 	progressBar := strings.Join([]string{r.prefix, bar, statistics, speedMeter}, " ")
-	fmt.Println(progressBar)
 
-	return ""
-
-	// return progressBar
+	return progressBar
 }
 
 func (r *RenderObject) formatSpeedMeter() string {
-	var rate float64
-	var remainingTime time.Duration
-	elapsed := time.Now().Sub(r.startTime)
+	if r.currentValue > r.startValue {
+		elapsed := time.Now().Sub(r.startTime)
+		rate := (r.currentValue - r.startValue) / elapsed.Seconds()
+		remainingTime := time.Duration(math.Round((r.endValue-r.currentValue)*rate)) * time.Second
 
-	ratio := (r.currentValue - r.startValue) / (r.endValue - r.currentValue - r.startValue)
-	if r.currentValue > r.startValue+r.stepValue {
-		rate = float64(r.endValue) / elapsed.Seconds()
-		remainingTime = time.Duration((elapsed.Seconds() * ratio)) * time.Second
-		// remainingTime = time.Duration((elapsed.Seconds()/(r.currentValue-r.startValue))*(r.endValue-(r.currentValue-r.startValue))) * time.Second
+		return fmt.Sprintf("[elapsed: %s, left: %s, %.2f iters/sec]",
+			formatTime(elapsed),
+			formatTime(remainingTime),
+			rate)
+
 	} else {
-		rate = 0.0
-		remainingTime = time.Duration(0.0 * time.Second)
+		return fmt.Sprintf("[elapsed: %s, left: %s, %s iters/sec]",
+			"00:00s",
+			"N/A",
+			"N/A")
 	}
-
-	return fmt.Sprintf("[elapsed: %s, left: %s, %.2f iters/sec]",
-		formatTime(elapsed),
-		formatTime(remainingTime),
-		rate)
 }
 
 func formatTime(d time.Duration) string {
