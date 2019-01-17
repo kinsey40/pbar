@@ -98,6 +98,7 @@ func convertToFloatValue(value interface{}) float64 {
 }
 
 func isConvertibleToFloat(v interface{}) bool {
+	fmt.Println(reflect.TypeOf(v), reflect.TypeOf(reflect.ValueOf(v)))
 	return reflect.TypeOf(v).ConvertibleTo(reflect.TypeOf(*new(float64)))
 }
 
@@ -119,17 +120,17 @@ func objectOrNumber(values ...interface{}) (bool, error) {
 
 	for index, v := range values {
 		if isConvertibleToFloat(v) {
-			isNumber = true
 			if index >= 1 && !isNumber {
 				err = errors.New("Mixed value types!")
 				break
 			}
+			isNumber = true
 		} else if isValidObject(v) {
-			isNumber = false
 			if index >= 1 && isNumber {
 				err = errors.New("Mixed value types!")
 				break
 			}
+			isNumber = false
 		} else {
 			err = errors.New(fmt.Sprintf("Type: %v is not as number or valid object!", reflect.TypeOf(v)))
 			break
