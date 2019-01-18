@@ -80,11 +80,11 @@ func MakeRenderObject(startValue, endValue, stepValue float64) *RenderObject {
 	return renderObj
 }
 
-func (r *RenderObject) Update(currentValue float64) error {
-	if currentValue == r.startValue {
-		r.startTime = time.Now()
-	}
+func (r *RenderObject) Initialize() {
+	r.startTime = time.Now()
+}
 
+func (r *RenderObject) Update(currentValue float64) error {
 	r.currentValue = currentValue
 	barString := r.formatProgressBar()
 
@@ -99,7 +99,7 @@ func (r *RenderObject) Update(currentValue float64) error {
 	return nil
 }
 
-func (r *RenderObject) SetPrefix(description string) {
+func (r *RenderObject) SetDescription(description string) {
 	prefix := description + ":"
 	r.prefix = prefix
 }
@@ -148,7 +148,7 @@ func (r *RenderObject) formatProgressBar() string {
 		strings.Repeat(r.remainingIterationSymbol, int(r.endValue)-numStepsComplete),
 		r.rParen)
 
-	statistics := fmt.Sprintf("%.1f/%.1f %.2f%%", r.currentValue, r.endValue, percentage)
+	statistics := fmt.Sprintf("%.1f/%.1f %.1f%%", r.currentValue, r.endValue, percentage)
 	speedMeter := r.formatSpeedMeter()
 	progressBar := strings.Join([]string{r.prefix, bar, statistics, speedMeter}, " ")
 

@@ -45,17 +45,17 @@ type PbarInterface interface {
 }
 
 type PbarSettings struct {
-	Iterator    *iterate.Iterator
-	Description string
-	Size        int
-	Retain      bool
+	Iterator *iterate.Iterator
+	// Description string
+	// Size        int
+	// Retain      bool
 }
 
 func Pbar(values ...interface{}) (*PbarSettings, error) {
 	var err error
 	pbarObj := new(PbarSettings)
-	pbarObj.Description = ""
-	pbarObj.Retain = false
+	// pbarObj.Description = ""
+	// pbarObj.Retain = false
 
 	if itr, err := iterate.CreateIterator(values...); err != nil {
 		return nil, err
@@ -74,25 +74,25 @@ func (pbarObj *PbarSettings) Update() {
 	}
 }
 
-func (pbarObj *PbarSettings) SetDescription(description string) {
-	pbarObj.Description = description
-	renderObj, err := pbarObj.Iterator.GetRenderObject()
+// func (pbarObj *PbarSettings) SetDescription(description string) {
+// 	pbarObj.Description = description
+// 	renderObj, err := pbarObj.Iterator.GetRenderObject()
 
-	if err != nil {
-		panic(err)
-	}
+// 	if err != nil {
+// 		panic(err)
+// 	}
 
-	renderObj.SetPrefix(pbarObj.Description)
-}
+// 	renderObj.SetPrefix(pbarObj.Description)
+// }
 
-func (pbarObj *PbarSettings) GetDescription() string {
-	return pbarObj.Description
-}
+// func (pbarObj *PbarSettings) GetDescription() string {
+// 	return pbarObj.Description
+// }
 
-func (pbarObj *PbarSettings) SetRetain(retain bool) {
-	pbarObj.Retain = retain
-}
+// func (pbarObj *PbarSettings) SetRetain(retain bool) {
+// 	pbarObj.Retain = retain
+// }
 
-func (pbarObj *PbarSettings) GetRetain() bool {
-	return pbarObj.Retain
-}
+// func (pbarObj *PbarSettings) GetRetain() bool {
+// 	return pbarObj.Retain
+// }

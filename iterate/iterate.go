@@ -98,7 +98,6 @@ func convertToFloatValue(value interface{}) float64 {
 }
 
 func isConvertibleToFloat(v interface{}) bool {
-	fmt.Println(reflect.TypeOf(v), reflect.TypeOf(reflect.ValueOf(v)))
 	return reflect.TypeOf(v).ConvertibleTo(reflect.TypeOf(*new(float64)))
 }
 
@@ -114,30 +113,30 @@ func isValidObject(v interface{}) bool {
 	return validObj
 }
 
-func objectOrNumber(values ...interface{}) (bool, error) {
-	var isNumber bool
+func isObject(values ...interface{}) (bool, error) {
+	var isObject bool
 	var err error
 
 	for index, v := range values {
 		if isConvertibleToFloat(v) {
-			if index >= 1 && !isNumber {
+			if index >= 1 && isObject {
 				err = errors.New("Mixed value types!")
 				break
 			}
-			isNumber = true
+			isObject = false
 		} else if isValidObject(v) {
-			if index >= 1 && isNumber {
+			if index >= 1 && !isObject {
 				err = errors.New("Mixed value types!")
 				break
 			}
-			isNumber = false
+			isObject = false
 		} else {
 			err = errors.New(fmt.Sprintf("Type: %v is not as number or valid object!", reflect.TypeOf(v)))
 			break
 		}
 	}
 
-	return isNumber, err
+	return isObject, err
 }
 
 func checkSize(isObject bool, values ...interface{}) error {
@@ -155,7 +154,7 @@ func checkSize(isObject bool, values ...interface{}) error {
 func CreateIterator(values ...interface{}) (*Iterator, error) {
 	itr := new(Iterator)
 
-	isObject, err := objectOrNumber(values...)
+	isObject, err := isObject(values...)
 	if err != nil {
 		return itr, err
 	}

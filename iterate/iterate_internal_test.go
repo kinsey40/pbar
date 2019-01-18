@@ -109,7 +109,7 @@ func TestIsValidObject(t *testing.T) {
 	}
 }
 
-func TestObjectOrNumber(t *testing.T) {
+func TestIsObject(t *testing.T) {
 	testCases := []struct {
 		values         []interface{}
 		expectedResult bool
@@ -134,13 +134,13 @@ func TestObjectOrNumber(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		isNumber, err := objectOrNumber(testCase.values...)
-		if isNumber != testCase.expectedResult {
+		isObject, err := isObject(testCase.values...)
+		if isObject != testCase.expectedResult {
 			t.Errorf(
 				fmt.Sprintf(
 					"Incorrect isNumber; expected: %v; got: %v for values: %v",
 					testCase.expectedResult,
-					isNumber,
+					isObject,
 					testCase.values))
 		}
 
