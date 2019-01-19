@@ -61,16 +61,9 @@ func main() {
 /* ******
 
 NOTES:
-- Can i use embedded interfaces to prevent having to have
-multiple Set and Get functions. i.e. the SET and GET functions
-for customizables can be set in the render object and use the
-interface to inherit those up to pbar
-YES can do this
-
-- With embedded interfaces, I need to be able to override the
-functions
-YES can do this
-
-- Need to testify package and to use assert in the tests
-YES can do this
+- Need to finish off the tests, generating the mocks etc.
+- Need method by which to do multiple progress bars
+- potentially look at changing what it writes to
+- Look at using RETAIN as well.
+- Then can release v1.0
 */

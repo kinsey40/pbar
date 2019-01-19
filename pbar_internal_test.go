@@ -119,28 +119,28 @@ func TestIsObject(t *testing.T) {
 		expectedResult bool
 		errorRaised    bool
 	}{
-		{[]interface{}{float64(1), float64(1), float64(1)}, true, false},
-		{[]interface{}{float32(1), float32(1), float32(1)}, true, false},
-		{[]interface{}{int8(1), int8(1), int8(1)}, true, false},
-		{[]interface{}{int16(1), int16(1), int16(1)}, true, false},
-		{[]interface{}{int32(1), int32(1), int32(1)}, true, false},
-		{[]interface{}{int64(1), int64(1), int64(1)}, true, false},
-		{[]interface{}{uint8(1), uint8(1), uint8(1)}, true, false},
-		{[]interface{}{uint16(1), uint16(1), uint16(1)}, true, false},
-		{[]interface{}{make(map[int]string, 1)}, false, false},
-		{[]interface{}{string("Hello")}, false, false},
-		{[]interface{}{make(chan int, 1)}, false, false},
-		{[]interface{}{[1]int{1}}, false, false},
-		{[]interface{}{[]int{}}, false, false},
-		{[]interface{}{float64(1), []int{}}, true, true},
-		{[]interface{}{[]int{}, float64(1)}, false, true},
-		{[]interface{}{complex128(1)}, false, true},
+		{[]interface{}{float64(1), float64(1), float64(1)}, false, false},
+		{[]interface{}{float32(1), float32(1), float32(1)}, false, false},
+		{[]interface{}{int8(1), int8(1), int8(1)}, false, false},
+		{[]interface{}{int16(1), int16(1), int16(1)}, false, false},
+		{[]interface{}{int32(1), int32(1), int32(1)}, false, false},
+		{[]interface{}{int64(1), int64(1), int64(1)}, false, false},
+		{[]interface{}{uint8(1), uint8(1), uint8(1)}, false, false},
+		{[]interface{}{uint16(1), uint16(1), uint16(1)}, false, false},
+		{[]interface{}{make(map[int]string, 1)}, true, false},
+		{[]interface{}{string("Hello")}, true, false},
+		{[]interface{}{make(chan int, 1)}, true, false},
+		{[]interface{}{[1]int{1}}, true, false},
+		{[]interface{}{[]int{}}, true, false},
+		{[]interface{}{float64(1), []int{}}, false, true},
+		{[]interface{}{[]int{}, float64(1)}, true, true},
+		{[]interface{}{complex128(1)}, true, true},
 	}
 
 	for _, testCase := range testCases {
 		isObject, err := isObject(testCase.values...)
 		isObjectMessage := fmt.Sprintf(
-			"Incorrect isNumber; expected: %v; returned: %v for values: %v",
+			"Incorrect isObject; expected: %v; returned: %v for values: %v",
 			testCase.expectedResult,
 			isObject,
 			testCase.values)
