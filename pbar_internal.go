@@ -61,7 +61,7 @@ func isObject(values ...interface{}) (bool, error) {
 				err = errors.New("Mixed value types!")
 				break
 			}
-			isObject = false
+			isObject = true
 		} else {
 			err = errors.New(fmt.Sprintf("Type: %v is not as number or valid object!", reflect.TypeOf(v)))
 			break

@@ -134,7 +134,7 @@ func TestIsObject(t *testing.T) {
 		{[]interface{}{[]int{}}, true, false},
 		{[]interface{}{float64(1), []int{}}, false, true},
 		{[]interface{}{[]int{}, float64(1)}, true, true},
-		{[]interface{}{complex128(1)}, true, true},
+		{[]interface{}{complex128(1)}, false, true},
 	}
 
 	for _, testCase := range testCases {
