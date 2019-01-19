@@ -34,65 +34,97 @@
 
 package pbar
 
-import "github.com/kinsey40/pbar/iterate"
+import (
+	"errors"
+	"fmt"
+	"reflect"
 
-type PbarInterface interface {
-	Update()
-	SetDescription(string)
-	GetDescription() string
-	SetRetain(bool)
-	GetRetain() bool
+	"github.com/kinsey40/pbar/render"
+)
+
+var StopIterationError = errors.New("Stop Iteration error")
+
+type IteratorInterface interface {
+	createIteratorFromObject(...interface{}) error
+	createIteratorFromValues(...interface{}) error
+	Update() error
 }
 
-type PbarSettings struct {
-	Iterator *iterate.Iterator
-	// Description string
-	// Size        int
-	// Retain      bool
+type Iterator struct {
+	Start   float64
+	Stop    float64
+	Step    float64
+	Current float64
+	*render.RenderObject
 }
 
-func Pbar(values ...interface{}) (*PbarSettings, error) {
-	var err error
-	pbarObj := new(PbarSettings)
-	// pbarObj.Description = ""
-	// pbarObj.Retain = false
+func (itr *Iterator) createIteratorFromObject(object interface{}) (err error) {
+	itr.Start = 0.0
+	itr.Stop = float64(reflect.ValueOf(object).Len())
+	itr.Step = 1.0
+	itr.Current = 0.0
 
-	if itr, err := iterate.CreateIterator(values...); err != nil {
-		return nil, err
+	return err
+}
+
+func (itr *Iterator) createIteratorFromValues(values ...interface{}) (err error) {
+	itr.Step = 1.0
+	floatValues := make([]float64, 0)
+
+	for _, value := range values {
+		floatValues = append(floatValues, convertToFloatValue(value))
+	}
+
+	switch len(floatValues) {
+	case 1:
+		itr.Stop = floatValues[0]
+	case 2:
+		itr.Start = floatValues[0]
+		itr.Stop = floatValues[1]
+	case 3:
+		itr.Start = floatValues[0]
+		itr.Stop = floatValues[1]
+		itr.Step = floatValues[2]
+	default:
+		return errors.New(fmt.Sprintf("Values have incorrect length: %d, expect length of 1, 2, or 3", len(values)))
+	}
+
+	return nil
+}
+
+func (itr *Iterator) Update() error {
+	itr.RenderObject.Update(itr.Current)
+	itr.Current += itr.Step
+
+	if itr.Current > itr.Stop {
+		return StopIterationError
+	}
+
+	return nil
+}
+
+func Pbar(values ...interface{}) (*Iterator, error) {
+	itr := new(Iterator)
+	isObject, err := isObject(values...)
+
+	if err != nil {
+		return itr, err
+	}
+
+	if err := checkSize(isObject, values); err != nil {
+		return itr, err
+	}
+
+	if isObject {
+		itr.createIteratorFromObject(values[0])
 	} else {
-		pbarObj.Iterator = itr
+		itr.createIteratorFromValues(values...)
 	}
 
-	return pbarObj, err
-}
-
-func (pbarObj *PbarSettings) Update() {
-	err := pbarObj.Iterator.Update()
-
-	if err != nil && err != iterate.StopIterationError {
-		panic(err)
+	itr.RenderObject = render.MakeRenderObject(itr.Start, itr.Stop, itr.Step)
+	if itr.Start > itr.Stop {
+		return itr, errors.New(fmt.Sprintf("Start value (%v) is less than stop value (%v)!", itr.Start, itr.Stop))
 	}
+
+	return itr, err
 }
-
-// func (pbarObj *PbarSettings) SetDescription(description string) {
-// 	pbarObj.Description = description
-// 	renderObj, err := pbarObj.Iterator.GetRenderObject()
-
-// 	if err != nil {
-// 		panic(err)
-// 	}
-
-// 	renderObj.SetPrefix(pbarObj.Description)
-// }
-
-// func (pbarObj *PbarSettings) GetDescription() string {
-// 	return pbarObj.Description
-// }
-
-// func (pbarObj *PbarSettings) SetRetain(retain bool) {
-// 	pbarObj.Retain = retain
-// }
-
-// func (pbarObj *PbarSettings) GetRetain() bool {
-// 	return pbarObj.Retain
-// }

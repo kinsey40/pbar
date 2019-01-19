@@ -34,6 +34,18 @@ package render
 
 import "testing"
 
+func TestRender(t *testing.T) {
+
+}
+
+func TestFormatProgressBar(t *testing.T) {
+
+}
+
+func TestFormatSpeedMeter(t *testing.T) {
+
+}
+
 func TestFormatTime(t *testing.T) {
 
 }

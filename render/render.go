@@ -42,6 +42,22 @@ import (
 	"time"
 )
 
+type RenderInterface interface {
+	MakeRenderObject(float64, float64, float64) *RenderObject
+	Initialize()
+	Update(float64) error
+	SetDescription(string)
+	GetDescription() string
+	SetIterationFinishedSymbol(string)
+	GetIterationFinishedSymbol() string
+	SetRemainingIterationSymbol(string)
+	GetRemainingIterationSymbol() string
+	SetLParen(string)
+	GetLParen() string
+	SetRParen(string)
+	GetRParen() string
+}
+
 type RenderObject struct {
 	w                        io.Writer
 	startValue               float64
@@ -49,7 +65,7 @@ type RenderObject struct {
 	endValue                 float64
 	stepValue                float64
 	startTime                time.Time
-	prefix                   string
+	description              string
 	iterationFinishedSymbol  string
 	currentIterationSymbol   string
 	remainingIterationSymbol string
@@ -99,25 +115,44 @@ func (r *RenderObject) Update(currentValue float64) error {
 	return nil
 }
 
-func (r *RenderObject) SetDescription(description string) {
-	prefix := description + ":"
-	r.prefix = prefix
+func (r *RenderObject) SetDescription(descrip string) {
+	r.description = descrip + ": "
+}
+
+func (r *RenderObject) GetDescription() string {
+	return r.description
 }
 
 func (r *RenderObject) SetIterationFinishedSymbol(newSymbol string) {
 	r.iterationFinishedSymbol = newSymbol
 }
 
+func (r *RenderObject) GetIterationFinishedSymbol() string {
+	return r.iterationFinishedSymbol
+}
+
 func (r *RenderObject) SetRemainingIterationSymbol(newSymbol string) {
 	r.remainingIterationSymbol = newSymbol
+}
+
+func (r *RenderObject) GetRemainingIterationSymbol() string {
+	return r.remainingIterationSymbol
 }
 
 func (r *RenderObject) SetLParen(newSymbol string) {
 	r.lParen = newSymbol
 }
 
+func (r *RenderObject) GetLParen() string {
+	return r.lParen
+}
+
 func (r *RenderObject) SetRParen(newSymbol string) {
 	r.rParen = newSymbol
+}
+
+func (r *RenderObject) GetRParen() string {
+	return r.rParen
 }
 
 func (r *RenderObject) render(s string) error {
@@ -150,7 +185,7 @@ func (r *RenderObject) formatProgressBar() string {
 
 	statistics := fmt.Sprintf("%.1f/%.1f %.1f%%", r.currentValue, r.endValue, percentage)
 	speedMeter := r.formatSpeedMeter()
-	progressBar := strings.Join([]string{r.prefix, bar, statistics, speedMeter}, " ")
+	progressBar := strings.Join([]string{r.description, bar, statistics, speedMeter}, " ")
 
 	return progressBar
 }

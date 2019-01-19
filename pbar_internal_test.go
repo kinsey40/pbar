@@ -21,20 +21,22 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  *
- * File:   iterate_test.go
+ * File:   pbar_internal_test.go
  * Author: kinsey40
  *
  * Created on 13 January 2019, 11:05
  *
- * The export file used for testing.
+ * The test file for pbar_interal.go
  *
  */
 
-package iterate
+package pbar
 
 import (
 	"fmt"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestIsConvertibleToFloat(t *testing.T) {
@@ -57,14 +59,12 @@ func TestIsConvertibleToFloat(t *testing.T) {
 
 	for _, testCase := range testCases {
 		returnedValue := isConvertibleToFloat(testCase.value)
-		if returnedValue != testCase.expectedResult {
-			t.Errorf(
-				fmt.Sprintf(
-					"Conversion value not correct returned: %v, expected: %v for: %v",
-					returnedValue,
-					testCase.expectedResult,
-					testCase.value))
-		}
+		message := fmt.Sprintf("Conversion value not correct expected: %v, returned: %v for: %v",
+			testCase.expectedResult,
+			returnedValue,
+			testCase.value)
+
+		assert.Equal(t, testCase.expectedResult, returnedValue, message)
 	}
 }
 
@@ -86,9 +86,11 @@ func TestConvertToFloat(t *testing.T) {
 
 	for _, testCase := range testCases {
 		floatValue := convertToFloatValue(testCase.input)
-		if floatValue != testCase.output {
-			t.Errorf(fmt.Sprintf("Incorrect float conversion: floatValue: %v, expected: %v", floatValue, testCase.output))
-		}
+		message := fmt.Sprintf("Incorrect float conversion: expected: %v, returned: %v",
+			testCase.output,
+			floatValue)
+
+		assert.Equal(t, testCase.output, floatValue, message)
 	}
 }
 
@@ -103,9 +105,11 @@ func TestIsValidObject(t *testing.T) {
 
 	for _, testCase := range testCases {
 		returnedValue := isValidObject(testCase.object)
-		if returnedValue != testCase.expectedResult {
-			t.Errorf(fmt.Sprintf("Is Valid Object incorrect returned: %v, expected: %v", returnedValue, testCase.expectedResult))
-		}
+		message := fmt.Sprintf("Is Valid Object incorrect expected: %v, returned: %v",
+			testCase.expectedResult,
+			returnedValue)
+
+		assert.Equal(t, testCase.expectedResult, returnedValue, message)
 	}
 }
 
@@ -135,21 +139,20 @@ func TestIsObject(t *testing.T) {
 
 	for _, testCase := range testCases {
 		isObject, err := isObject(testCase.values...)
-		if isObject != testCase.expectedResult {
-			t.Errorf(
-				fmt.Sprintf(
-					"Incorrect isNumber; expected: %v; got: %v for values: %v",
-					testCase.expectedResult,
-					isObject,
-					testCase.values))
-		}
+		isObjectMessage := fmt.Sprintf(
+			"Incorrect isNumber; expected: %v; returned: %v for values: %v",
+			testCase.expectedResult,
+			isObject,
+			testCase.values)
 
-		if err != nil && !testCase.errorRaised {
-			t.Errorf(fmt.Sprintf("Error (%v) incorrectly raised", err))
-		}
+		assert.Equal(t, testCase.expectedResult, isObject, isObjectMessage)
 
-		if err == nil && testCase.errorRaised {
-			t.Errorf(fmt.Sprintf("Expected error not raised"))
+		if testCase.errorRaised {
+			message := fmt.Sprintf("Expected error not raised")
+			assert.Error(t, err, message)
+		} else {
+			message := fmt.Sprintf("Error (%v) incorrectly raised", err)
+			assert.NoError(t, err, message)
 		}
 	}
 }
@@ -172,20 +175,20 @@ func TestCheckSize(t *testing.T) {
 
 	for _, testCase := range testCases {
 		err := checkSize(testCase.isObject, testCase.values...)
-		if err != nil && !testCase.errorRaised {
-			t.Errorf(
-				fmt.Sprintf(
-					"Unexpected error raised, for values: %v; with isObject: %v",
-					testCase.values,
-					testCase.isObject))
-		}
+		if testCase.errorRaised {
+			message := fmt.Sprintf(
+				"Expected error not raised, for values: %v; with isObject: %v",
+				testCase.values,
+				testCase.isObject)
 
-		if err == nil && testCase.errorRaised {
-			t.Errorf(
-				fmt.Sprintf(
-					"Expected error not raised, for values: %v; with isObject: %v",
-					testCase.values,
-					testCase.isObject))
+			assert.Error(t, err, message)
+		} else {
+			message := fmt.Sprintf(
+				"Unexpected error raised, for values: %v; with isObject: %v",
+				testCase.values,
+				testCase.isObject)
+
+			assert.NoError(t, err, message)
 		}
 	}
 }
