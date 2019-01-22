@@ -157,7 +157,7 @@ func TestIsObject(t *testing.T) {
 	}
 }
 
-func TestCheckSize(t *testing.T) {
+func TestCheckValues(t *testing.T) {
 	testCases := []struct {
 		isObject    bool
 		values      []interface{}
@@ -171,10 +171,11 @@ func TestCheckSize(t *testing.T) {
 		{false, []interface{}{float64(1), float64(1), float64(1)}, false},
 		{false, []interface{}{}, true},
 		{false, []interface{}{float64(1), float64(1), float64(1), float64(1)}, true},
+		{false, []interface{}{float64(2), float64(1), float64(1), float64(1)}, true},
 	}
 
 	for _, testCase := range testCases {
-		err := checkSize(testCase.isObject, testCase.values...)
+		err := checkValues(testCase.isObject, testCase.values...)
 		if testCase.errorRaised {
 			message := fmt.Sprintf(
 				"Expected error not raised, for values: %v; with isObject: %v",
@@ -191,4 +192,18 @@ func TestCheckSize(t *testing.T) {
 			assert.NoError(t, err, message)
 		}
 	}
+}
+
+func TestCreateIteratorFromValues(t *testing.T) {
+
+}
+
+func TestCreateIteratorFromObject(t *testing.T) {
+	// testCases := []struct {
+	// 	object	interface{}
+	// 	expectedStart	0.0
+	// 	expectedStop	0.0
+	// 	expectedStep	1.0
+	// 	expectedCurrent	0.0
+	// }
 }

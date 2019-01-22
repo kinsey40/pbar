@@ -32,6 +32,8 @@
 
 package pbar_test
 
+import "testing"
+
 // import (
 // 	"fmt"
 // 	"testing"
@@ -103,3 +105,19 @@ package pbar_test
 // 		}
 // 	}
 // }
+
+func TestPbar(t *testing.T) {
+
+}
+
+func TestUpdate(t *testing.T) {
+
+}
+
+func TestSetDescription(t *testing.T) {
+
+}
+
+func TestGetDescription(t *testing.T) {
+
+}

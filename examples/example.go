@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/kinsey40/pbar"
@@ -9,27 +8,20 @@ import (
 
 func iterateUsingArray() {
 	x := [5]int{1, 2, 3, 4, 5}
-	t, err := pbar.Pbar(x)
+	t, _ := pbar.Pbar(x)
 
 	for range x {
-		if err == nil {
-			t.Update()
-		}
-
 		time.Sleep(time.Second * 1)
+		t.Update()
 	}
-	t.Update()
 }
 
 func iterateUsingValues() {
 	t, _ := pbar.Pbar(10)
-	// t.Initialize()
-	t.Update()
 	for i := 0; i < 10; i++ {
-		t.Update()
 		time.Sleep(time.Second * 1)
+		t.Update()
 	}
-	fmt.Println("Finished!")
 }
 
 // Need an initialize function which does not take into account the
@@ -54,7 +46,7 @@ func iterateUsingValues() {
 
 func main() {
 	// multipleProgressBars()
-	// iterateUsingArray()
+	iterateUsingArray()
 	iterateUsingValues()
 }
 

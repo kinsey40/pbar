@@ -37,6 +37,8 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+
+	"github.com/kinsey40/pbar/render"
 )
 
 func convertToFloatValue(value interface{}) float64 {
@@ -71,13 +73,20 @@ func isObject(values ...interface{}) (bool, error) {
 	return isObject, err
 }
 
-func checkSize(isObject bool, values ...interface{}) error {
+func checkValues(isObject bool, values ...interface{}) error {
 	if isObject && len(values) != 1 {
 		return errors.New("Must only pass a single valid object!")
 	}
 
 	if !isObject && (len(values) < 1 || len(values) > 3) {
 		return errors.New("Expect 1, 2 or 3 parameters (stop); (start, stop) or (start, stop, step)")
+	}
+
+	if !isObject && len(values) > 1 && convertToFloatValue(values[0]) < convertToFloatValue(values[1]) {
+		return errors.New(
+			fmt.Sprintf("Start value (%v) is less than stop value (%v)!",
+				convertToFloatValue(values[0]),
+				convertToFloatValue(values[1])))
 	}
 
 	return nil
@@ -97,4 +106,41 @@ func isValidObject(v interface{}) bool {
 	reflect.ValueOf(v).Len()
 
 	return validObj
+}
+
+func createIteratorFromObject(object interface{}) *iterator {
+	itr := new(iterator)
+	itr.start = 0.0
+	itr.stop = float64(reflect.ValueOf(object).Len())
+	itr.step = 1.0
+	itr.current = 0.0
+	itr.renderObject = render.MakeRenderObject(itr.start, itr.stop, itr.step)
+
+	return itr
+}
+
+func createIteratorFromValues(values ...interface{}) *iterator {
+	itr := new(iterator)
+	itr.step = 1.0
+	floatValues := make([]float64, 0)
+
+	for _, value := range values {
+		floatValues = append(floatValues, convertToFloatValue(value))
+	}
+
+	switch len(floatValues) {
+	case 1:
+		itr.stop = floatValues[0]
+	case 2:
+		itr.start = floatValues[0]
+		itr.stop = floatValues[1]
+	case 3:
+		itr.start = floatValues[0]
+		itr.stop = floatValues[1]
+		itr.step = floatValues[2]
+	}
+
+	itr.renderObject = render.MakeRenderObject(itr.start, itr.stop, itr.step)
+
+	return itr
 }

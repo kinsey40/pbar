@@ -36,95 +36,107 @@ package pbar
 
 import (
 	"errors"
-	"fmt"
-	"reflect"
 
 	"github.com/kinsey40/pbar/render"
 )
 
-var StopIterationError = errors.New("Stop Iteration error")
-
-type IteratorInterface interface {
+type iteratorInterface interface {
 	createIteratorFromObject(...interface{}) error
 	createIteratorFromValues(...interface{}) error
 	Update() error
 }
 
-type Iterator struct {
-	Start   float64
-	Stop    float64
-	Step    float64
-	Current float64
-	*render.RenderObject
+type iterator struct {
+	start        float64
+	stop         float64
+	step         float64
+	current      float64
+	rendered     bool
+	renderObject *render.RenderObject
 }
 
-func (itr *Iterator) createIteratorFromObject(object interface{}) (err error) {
-	itr.Start = 0.0
-	itr.Stop = float64(reflect.ValueOf(object).Len())
-	itr.Step = 1.0
-	itr.Current = 0.0
-
-	return err
-}
-
-func (itr *Iterator) createIteratorFromValues(values ...interface{}) (err error) {
-	itr.Step = 1.0
-	floatValues := make([]float64, 0)
-
-	for _, value := range values {
-		floatValues = append(floatValues, convertToFloatValue(value))
-	}
-
-	switch len(floatValues) {
-	case 1:
-		itr.Stop = floatValues[0]
-	case 2:
-		itr.Start = floatValues[0]
-		itr.Stop = floatValues[1]
-	case 3:
-		itr.Start = floatValues[0]
-		itr.Stop = floatValues[1]
-		itr.Step = floatValues[2]
-	default:
-		return errors.New(fmt.Sprintf("Values have incorrect length: %d, expect length of 1, 2, or 3", len(values)))
-	}
-
-	return nil
-}
-
-func (itr *Iterator) Update() error {
-	itr.RenderObject.Update(itr.Current)
-	itr.Current += itr.Step
-
-	if itr.Current > itr.Stop {
-		return StopIterationError
-	}
-
-	return nil
-}
-
-func Pbar(values ...interface{}) (*Iterator, error) {
-	itr := new(Iterator)
+func Pbar(values ...interface{}) (*iterator, error) {
+	var itr *iterator
 	isObject, err := isObject(values...)
 
 	if err != nil {
-		return itr, err
+		return nil, err
 	}
 
-	if err := checkSize(isObject, values); err != nil {
-		return itr, err
+	if err := checkValues(isObject, values); err != nil {
+		return nil, err
 	}
 
 	if isObject {
-		itr.createIteratorFromObject(values[0])
+		itr = createIteratorFromObject(values[0])
 	} else {
-		itr.createIteratorFromValues(values...)
+		itr = createIteratorFromValues(values...)
 	}
 
-	itr.RenderObject = render.MakeRenderObject(itr.Start, itr.Stop, itr.Step)
-	if itr.Start > itr.Stop {
-		return itr, errors.New(fmt.Sprintf("Start value (%v) is less than stop value (%v)!", itr.Start, itr.Stop))
-	}
+	itr.Update()
 
 	return itr, err
+}
+
+func (itr *iterator) Update() error {
+	itr.renderObject.Update(itr.current, itr.rendered)
+
+	if itr.current == itr.start && !itr.rendered {
+		itr.rendered = true
+	}
+
+	itr.current += itr.step
+	if itr.current > itr.stop {
+		return errors.New("Stop Iteration error")
+	}
+
+	return nil
+}
+
+func (itr *iterator) SetDescription(descrip string) {
+	itr.renderObject.Description = descrip + ": "
+}
+
+func (itr *iterator) GetDescription() string {
+	return itr.renderObject.Description
+}
+
+func (itr *iterator) SetIterationFinishedSymbol(newSymbol string) {
+	itr.renderObject.IterationFinishedSymbol = newSymbol
+}
+
+func (itr *iterator) GetIterationFinishedSymbol() string {
+	return itr.renderObject.IterationFinishedSymbol
+}
+
+func (itr *iterator) SetCurrentIterationSymbol(newSymbol string) {
+	itr.renderObject.CurrentIterationSymbol = newSymbol
+}
+
+func (itr *iterator) GetCurrentIterationSymbol() string {
+	return itr.renderObject.CurrentIterationSymbol
+}
+
+func (itr *iterator) SetRemainingIterationSymbol(newSymbol string) {
+	itr.renderObject.RemainingIterationSymbol = newSymbol
+}
+
+func (itr *iterator) GetRemainingIterationSymbol() string {
+	return itr.renderObject.RemainingIterationSymbol
+}
+
+func (itr *iterator) SetLParen(newSymbol string) {
+	itr.renderObject.LParen = newSymbol
+}
+
+func (itr *iterator) GetLParen() string {
+	return itr.renderObject.LParen
+}
+
+func (itr *iterator) SetRParen(newSymbol string) {
+	itr.renderObject.RParen = newSymbol
+}
+
+func (itr *iterator) GetRParen() string {
+	return itr.renderObject.RParen
 }

@@ -31,3 +31,36 @@
  */
 
 package render_test
+
+import (
+	"testing"
+)
+
+// func TestMakeRenderObject(t *testing.T) {
+// 	mockCtrl := gomock.NewController(t)
+// 	defer mockCtrl.Finish()
+
+// 	mockRenderInterface := mocks.NewMockRenderInterface(mockCtrl)
+// 	testCases := []struct {
+// 		startValue float64
+// 		stopValue  float64
+// 		stepValue  float64
+// 	}{
+// 		{float64(1), float64(3), float64(1)},
+// 	}
+
+// 	for _, testCase := range testCases {
+// 		renderObj := new(render.RenderObject)
+// 		renderObj.StartValue = testCase.startValue
+
+// 		mockRenderInterface.EXPECT().MakeRenderObject(testCase.startValue, testCase.stopValue, testCase.stepValue).Return(renderObj).Times(1)
+// 		returnedRenderObj := mockRenderInterface.MakeRenderObject(testCase.startValue, testCase.stopValue, testCase.stepValue)
+
+// 		assert.Equal(t, testCase.startValue, returnedRenderObj.StartValue, fmt.Sprintf("Start values don't match, expected: %v; got: %v", testCase.startValue, returnedRenderObj.StartValue))
+
+// 	}
+// }
+
+func TestUpdate(t *testing.T) {
+
+}

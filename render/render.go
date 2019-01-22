@@ -43,19 +43,11 @@ import (
 )
 
 type RenderInterface interface {
-	MakeRenderObject(float64, float64, float64) *RenderObject
-	Initialize()
+	MakeRenderObject(float64, float64, float64) interface{}
 	Update(float64) error
-	SetDescription(string)
-	GetDescription() string
-	SetIterationFinishedSymbol(string)
-	GetIterationFinishedSymbol() string
-	SetRemainingIterationSymbol(string)
-	GetRemainingIterationSymbol() string
-	SetLParen(string)
-	GetLParen() string
-	SetRParen(string)
-	GetRParen() string
+	render(string) error
+	formatProgressBar() string
+	formatSpeedMeter() error
 }
 
 type RenderObject struct {
@@ -65,13 +57,14 @@ type RenderObject struct {
 	endValue                 float64
 	stepValue                float64
 	startTime                time.Time
-	description              string
-	iterationFinishedSymbol  string
-	currentIterationSymbol   string
-	remainingIterationSymbol string
-	lineSize                 int
-	lParen                   string
-	rParen                   string
+	Description              string
+	IterationFinishedSymbol  string
+	CurrentIterationSymbol   string
+	RemainingIterationSymbol string
+	LineSize                 int
+	MaxLineSize              int
+	LParen                   string
+	RParen                   string
 }
 
 func MakeRenderObject(startValue, endValue, stepValue float64) *RenderObject {
@@ -81,26 +74,18 @@ func MakeRenderObject(startValue, endValue, stepValue float64) *RenderObject {
 	renderObj.currentValue = startValue
 	renderObj.stepValue = stepValue
 	renderObj.endValue = endValue
-	renderObj.iterationFinishedSymbol = "="
-	renderObj.currentIterationSymbol = ">"
-	renderObj.remainingIterationSymbol = "-"
-	renderObj.lParen = "|"
-	renderObj.rParen = "|"
-
-	if difference := int(endValue - startValue); difference < 10 {
-		renderObj.lineSize = difference
-	} else {
-		renderObj.lineSize = 10
-	}
+	renderObj.IterationFinishedSymbol = "#"
+	renderObj.CurrentIterationSymbol = "#"
+	renderObj.RemainingIterationSymbol = "-"
+	renderObj.LParen = "|"
+	renderObj.RParen = "|"
+	renderObj.MaxLineSize = 80
+	renderObj.LineSize = 10
 
 	return renderObj
 }
 
-func (r *RenderObject) Initialize() {
-	r.startTime = time.Now()
-}
-
-func (r *RenderObject) Update(currentValue float64) error {
+func (r *RenderObject) Update(currentValue float64, rendered bool) error {
 	r.currentValue = currentValue
 	barString := r.formatProgressBar()
 
@@ -112,47 +97,11 @@ func (r *RenderObject) Update(currentValue float64) error {
 		return err
 	}
 
+	if !rendered {
+		r.startTime = time.Now()
+	}
+
 	return nil
-}
-
-func (r *RenderObject) SetDescription(descrip string) {
-	r.description = descrip + ": "
-}
-
-func (r *RenderObject) GetDescription() string {
-	return r.description
-}
-
-func (r *RenderObject) SetIterationFinishedSymbol(newSymbol string) {
-	r.iterationFinishedSymbol = newSymbol
-}
-
-func (r *RenderObject) GetIterationFinishedSymbol() string {
-	return r.iterationFinishedSymbol
-}
-
-func (r *RenderObject) SetRemainingIterationSymbol(newSymbol string) {
-	r.remainingIterationSymbol = newSymbol
-}
-
-func (r *RenderObject) GetRemainingIterationSymbol() string {
-	return r.remainingIterationSymbol
-}
-
-func (r *RenderObject) SetLParen(newSymbol string) {
-	r.lParen = newSymbol
-}
-
-func (r *RenderObject) GetLParen() string {
-	return r.lParen
-}
-
-func (r *RenderObject) SetRParen(newSymbol string) {
-	r.rParen = newSymbol
-}
-
-func (r *RenderObject) GetRParen() string {
-	return r.rParen
 }
 
 func (r *RenderObject) render(s string) error {
@@ -171,21 +120,42 @@ func (r *RenderObject) render(s string) error {
 }
 
 func (r *RenderObject) formatProgressBar() string {
+	var itrFinishedString string
+	var itrCurrentString string
+	var itrRemainingString string
+
 	ratio := r.currentValue / r.endValue
 	percentage := ratio * 100.0
 
-	numStepsComplete := int(ratio * float64(r.lineSize))
+	numStepsComplete := int(ratio * float64(r.LineSize))
+	if numStepsComplete == 0 {
+		itrFinishedString = ""
+		itrCurrentString = ""
+		itrRemainingString = strings.Repeat(r.RemainingIterationSymbol, r.LineSize)
+	} else if numStepsComplete == r.LineSize {
+		itrFinishedString = strings.Repeat(r.IterationFinishedSymbol, r.LineSize)
+		itrCurrentString = r.CurrentIterationSymbol
+		itrRemainingString = ""
+	} else if numStepsComplete == 1.0 {
+		itrFinishedString = ""
+		itrCurrentString = r.CurrentIterationSymbol
+		itrRemainingString = strings.Repeat(r.RemainingIterationSymbol, r.LineSize-1)
+	} else {
+		itrFinishedString = strings.Repeat(r.IterationFinishedSymbol, numStepsComplete-1)
+		itrCurrentString = r.CurrentIterationSymbol
+		itrRemainingString = strings.Repeat(r.RemainingIterationSymbol, r.LineSize-numStepsComplete)
+	}
 
 	bar := fmt.Sprintf("%s%s%s%s%s",
-		r.lParen,
-		strings.Repeat(r.iterationFinishedSymbol, numStepsComplete),
-		strings.Repeat(r.currentIterationSymbol, 1),
-		strings.Repeat(r.remainingIterationSymbol, int(r.endValue)-numStepsComplete),
-		r.rParen)
+		r.LParen,
+		itrFinishedString,
+		itrCurrentString,
+		itrRemainingString,
+		r.RParen)
 
 	statistics := fmt.Sprintf("%.1f/%.1f %.1f%%", r.currentValue, r.endValue, percentage)
 	speedMeter := r.formatSpeedMeter()
-	progressBar := strings.Join([]string{r.description, bar, statistics, speedMeter}, " ")
+	progressBar := strings.Join([]string{r.Description, bar, statistics, speedMeter}, " ")
 
 	return progressBar
 }

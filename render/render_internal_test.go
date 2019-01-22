@@ -32,9 +32,19 @@
 
 package render
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+	"time"
+
+	"github.com/stretchr/testify/assert"
+)
 
 func TestRender(t *testing.T) {
+	// mockCtrl := gomock.NewController(t)
+	// defer mockCtrl.Finish()
+
+	// mockRenderInterface := mocks.NewMockRenderInterface(mockCtrl)
 
 }
 
@@ -43,9 +53,35 @@ func TestFormatProgressBar(t *testing.T) {
 }
 
 func TestFormatSpeedMeter(t *testing.T) {
+	// mockCtrl := gomock.NewController(t)
+	// defer mockCtrl.Finish()
 
+	// mockRenderInterface := mocks.NewMockRenderInterface(mockCtrl)
+	// testCases := []struct {
+	// 	progressBar string
+	// }{
+	// 	{""},
+	// }
+
+	// for _, testCase := range testCases {
+	// 	mockRenderInterface.EXPECT().formatProgressBar().Return(testCase.progressBar).Times(1)
+	// 	message := fmt.Sprintf("Progress bar not expected, expected: %v; got: %v", testCase.progressBar, speedMeter)
+	// 	speedMeter := mockRenderInterface.formatProgressBar()
+	// 	assert.Equal(t, testCase.progressBar, speedMeter, message)
+	// }
 }
 
 func TestFormatTime(t *testing.T) {
+	testCases := []struct {
+		timeValue      time.Duration
+		expectedString string
+	}{
+		{time.Duration(10) * time.Second, "00m:10s"},
+	}
 
+	for _, testCase := range testCases {
+		returnedString := formatTime(testCase.timeValue)
+		message := fmt.Sprintf("Time string incorrect, expected: %v; got: %v", testCase.expectedString, returnedString)
+		assert.Equal(t, testCase.expectedString, returnedString, message)
+	}
 }
