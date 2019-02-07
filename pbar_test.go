@@ -32,7 +32,168 @@
 
 package pbar_test
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+
+	"github.com/kinsey40/pbar"
+	"github.com/stretchr/testify/assert"
+)
+
+func TestPbar(t *testing.T) {
+	testCases := []struct {
+		values      []interface{}
+		expectError bool
+	}{
+		{[]interface{}{float64(1), []int{}}, true},
+		{[]interface{}{[]int{}, float64(1)}, true},
+		{[]interface{}{complex128(1)}, true},
+		{[]interface{}{}, true},
+		{[]interface{}{float64(2), float64(1), float64(1)}, true},
+		{[]interface{}{float64(1), float64(2), float64(100)}, true},
+		{[]interface{}{float64(1), float64(10), float64(1)}, false},
+	}
+
+	for _, testCase := range testCases {
+		itr, err := pbar.Pbar(testCase.values...)
+		if testCase.expectError {
+			assert.Error(t, err, fmt.Sprintf("Expected error was not raised!"))
+			assert.Nil(t, itr, fmt.Sprintf("Iterator is not nil (%v)", itr))
+		} else {
+			assert.NoError(t, err, fmt.Sprintf("Unexpected error(%v) was raised!", err))
+			assert.NotNil(t, itr, fmt.Sprintf("Iterator is nil!"))
+		}
+	}
+}
+
+func TestUpdate(t *testing.T) {
+	// testCases := []struct {
+	// 	values []interface{}
+	// 	expectError	bool
+	// }
+
+}
+
+func TestSetGetDescription(t *testing.T) {
+	itr := pbar.MakeIteratorObject()
+	testCases := []struct {
+		desc           string
+		expectedPrefix string
+	}{
+		{"Hello", "Hello: "},
+		{"World", "World: "},
+	}
+
+	for _, testCase := range testCases {
+		itr.SetDescription(testCase.desc)
+		returnedDesc := itr.GetDescription()
+
+		assert.Equal(t,
+			testCase.expectedPrefix,
+			returnedDesc,
+			fmt.Sprintf("Descriptions not equal; expected: %s, got: %s", testCase.expectedPrefix, returnedDesc))
+	}
+}
+
+func TestSetGetFinishedIterationSymbol(t *testing.T) {
+	itr := pbar.MakeIteratorObject()
+	testCases := []struct {
+		symbol string
+	}{
+		{"Hello"},
+		{"World"},
+	}
+
+	for _, testCase := range testCases {
+		itr.SetFinishedIterationSymbol(testCase.symbol)
+		returnedSymbol := itr.GetFinishedIterationSymbol()
+
+		assert.Equal(t,
+			testCase.symbol,
+			returnedSymbol,
+			fmt.Sprintf("Descriptions not equal; expected: %s, got: %s", testCase.symbol, returnedSymbol))
+	}
+}
+
+func TestSetGetCurrentIterationSymbol(t *testing.T) {
+	itr := pbar.MakeIteratorObject()
+	testCases := []struct {
+		symbol string
+	}{
+		{"Hello"},
+		{"World"},
+	}
+
+	for _, testCase := range testCases {
+		itr.SetCurrentIterationSymbol(testCase.symbol)
+		returnedSymbol := itr.GetCurrentIterationSymbol()
+
+		assert.Equal(t,
+			testCase.symbol,
+			returnedSymbol,
+			fmt.Sprintf("Descriptions not equal; expected: %s, got: %s", testCase.symbol, returnedSymbol))
+	}
+}
+
+func TestSetGetRemainingIterationSymbol(t *testing.T) {
+	itr := pbar.MakeIteratorObject()
+	testCases := []struct {
+		symbol string
+	}{
+		{"Hello"},
+		{"World"},
+	}
+
+	for _, testCase := range testCases {
+		itr.SetRemainingIterationSymbol(testCase.symbol)
+		returnedSymbol := itr.GetRemainingIterationSymbol()
+
+		assert.Equal(t,
+			testCase.symbol,
+			returnedSymbol,
+			fmt.Sprintf("Descriptions not equal; expected: %s, got: %s", testCase.symbol, returnedSymbol))
+	}
+}
+
+func TestSetGetLParenSymbol(t *testing.T) {
+	itr := pbar.MakeIteratorObject()
+	testCases := []struct {
+		symbol string
+	}{
+		{"Hello"},
+		{"World"},
+	}
+
+	for _, testCase := range testCases {
+		itr.SetLParen(testCase.symbol)
+		returnedSymbol := itr.GetLParen()
+
+		assert.Equal(t,
+			testCase.symbol,
+			returnedSymbol,
+			fmt.Sprintf("Descriptions not equal; expected: %s, got: %s", testCase.symbol, returnedSymbol))
+	}
+}
+
+func TestSetGetRParenSymbol(t *testing.T) {
+	itr := pbar.MakeIteratorObject()
+	testCases := []struct {
+		symbol string
+	}{
+		{"Hello"},
+		{"World"},
+	}
+
+	for _, testCase := range testCases {
+		itr.SetRParen(testCase.symbol)
+		returnedSymbol := itr.GetRParen()
+
+		assert.Equal(t,
+			testCase.symbol,
+			returnedSymbol,
+			fmt.Sprintf("Descriptions not equal; expected: %s, got: %s", testCase.symbol, returnedSymbol))
+	}
+}
 
 // import (
 // 	"fmt"
@@ -105,19 +266,3 @@ import "testing"
 // 		}
 // 	}
 // }
-
-func TestPbar(t *testing.T) {
-
-}
-
-func TestUpdate(t *testing.T) {
-
-}
-
-func TestSetDescription(t *testing.T) {
-
-}
-
-func TestGetDescription(t *testing.T) {
-
-}

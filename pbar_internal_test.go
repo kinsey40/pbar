@@ -39,6 +39,18 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestMakeIteratorObject(t *testing.T) {
+	itr := MakeIteratorObject()
+
+	assert.Zero(t, itr.start, fmt.Sprintf("start not zero value: %v", itr.start))
+	assert.Zero(t, itr.stop, fmt.Sprintf("stop not zero value: %v", itr.start))
+	assert.Zero(t, itr.step, fmt.Sprintf("step not zero value: %v", itr.start))
+	assert.Zero(t, itr.current, fmt.Sprintf("current not zero value: %v", itr.start))
+	assert.Zero(t, itr.rendered, fmt.Sprintf("rendered not zero value: %v", itr.start))
+	assert.NotNil(t, itr, fmt.Sprintf("Iterator is nil!"))
+	assert.NotNil(t, itr.renderObject, fmt.Sprintf("renderObject is nil"))
+}
+
 func TestIsConvertibleToFloat(t *testing.T) {
 	testCases := []struct {
 		value          interface{}
@@ -55,6 +67,7 @@ func TestIsConvertibleToFloat(t *testing.T) {
 		{int(1), true},
 		{make(map[int]int), false},
 		{make([]string, 1), false},
+		{complex128(1), false},
 	}
 
 	for _, testCase := range testCases {
@@ -171,7 +184,7 @@ func TestCheckValues(t *testing.T) {
 		{false, []interface{}{float64(1), float64(1), float64(1)}, false},
 		{false, []interface{}{}, true},
 		{false, []interface{}{float64(1), float64(1), float64(1), float64(1)}, true},
-		{false, []interface{}{float64(2), float64(1), float64(1), float64(1)}, true},
+		{false, []interface{}{float64(2), float64(1), float64(1)}, true},
 	}
 
 	for _, testCase := range testCases {
@@ -190,6 +203,36 @@ func TestCheckValues(t *testing.T) {
 				testCase.isObject)
 
 			assert.NoError(t, err, message)
+		}
+	}
+}
+
+func TestProgess(t *testing.T) {
+	testCases := []struct {
+		start            float64
+		stop             float64
+		step             float64
+		current          float64
+		expectedEndValue float64
+		expectedError    bool
+	}{
+		{0.0, 5.0, 1.0, 0.0, 2.0, false},
+		{0.0, 5.0, 1.0, 4.0, 5.0, false},
+		{0.0, 5.0, 1.0, 5.0, 6.0, true},
+	}
+
+	for _, testCase := range testCases {
+		itr := new(iterator)
+		itr.start = testCase.start
+		itr.stop = testCase.stop
+		itr.step = testCase.step
+		itr.current = testCase.current
+
+		err := itr.progress()
+		if testCase.expectedError {
+			assert.Error(t, err, fmt.Sprintf("Expected error not raised!"))
+		} else {
+			assert.NoError(t, err, fmt.Sprintf("Unexpected error raised!"))
 		}
 	}
 }

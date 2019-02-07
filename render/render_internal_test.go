@@ -49,26 +49,75 @@ func TestRender(t *testing.T) {
 }
 
 func TestFormatProgressBar(t *testing.T) {
-
+	// Testing this will require use of MOCKS!
 }
 
 func TestFormatSpeedMeter(t *testing.T) {
-	// mockCtrl := gomock.NewController(t)
-	// defer mockCtrl.Finish()
+	// Need some way of mocking time.Now() or setting it to a set value
+	// so that when it gets called, it will give an answer I already
+	// know
+}
 
-	// mockRenderInterface := mocks.NewMockRenderInterface(mockCtrl)
-	// testCases := []struct {
-	// 	progressBar string
-	// }{
-	// 	{""},
-	// }
+func TestGetBarString(t *testing.T) {
+	testCases := []struct {
+		numStepsComplete int
+		lineSize         int
+		finSymbol        string
+		currSymbol       string
+		remSymbol        string
+		expectedString   string
+	}{
+		{0, 10, "#", "#", "-", "----------"},
+		{1, 10, "#", "#", "-", "#---------"},
+		{2, 10, "#", "#", "-", "##--------"},
+		{10, 10, "#", "#", "-", "##########"},
+	}
 
-	// for _, testCase := range testCases {
-	// 	mockRenderInterface.EXPECT().formatProgressBar().Return(testCase.progressBar).Times(1)
-	// 	message := fmt.Sprintf("Progress bar not expected, expected: %v; got: %v", testCase.progressBar, speedMeter)
-	// 	speedMeter := mockRenderInterface.formatProgressBar()
-	// 	assert.Equal(t, testCase.progressBar, speedMeter, message)
-	// }
+	for _, testCase := range testCases {
+		r := MakeRenderObject(0.0, 0.0, 0.0)
+		r.LineSize = testCase.lineSize
+		r.FinishedIterationSymbol = testCase.finSymbol
+		r.CurrentIterationSymbol = testCase.currSymbol
+		r.RemainingIterationSymbol = testCase.remSymbol
+
+		barString := r.getBarString(testCase.numStepsComplete)
+
+		assert.Equal(t,
+			testCase.expectedString,
+			barString,
+			fmt.Sprintf("Strings not equal, expected: %s; got: %s", testCase.expectedString, barString))
+	}
+}
+
+func TestGetStatistics(t *testing.T) {
+	testCases := []struct {
+		start                     float64
+		stop                      float64
+		step                      float64
+		current                   float64
+		lineSize                  int
+		expectedStatistics        string
+		expectedNumStepsCompleted int
+	}{
+		{0.0, 5.0, 1.0, 3.0, 10, "3.0/5.0 60.0%", 6},
+	}
+
+	for _, testCase := range testCases {
+		r := MakeRenderObject(testCase.start, testCase.stop, testCase.step)
+		r.CurrentValue = testCase.current
+		r.LineSize = testCase.lineSize
+
+		stats, numSteps := r.getStatistics()
+
+		assert.Equal(t,
+			testCase.expectedStatistics,
+			stats,
+			fmt.Sprintf("Stats string not equal, expected: %s; got: %s", testCase.expectedStatistics, stats))
+		assert.Equal(t,
+			testCase.expectedNumStepsCompleted,
+			numSteps,
+			fmt.Sprintf("Num steps complete not equal, expected: %d; got: %d", testCase.expectedNumStepsCompleted, numSteps))
+	}
 }
 
 func TestFormatTime(t *testing.T) {

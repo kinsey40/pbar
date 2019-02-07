@@ -33,34 +33,122 @@
 package render_test
 
 import (
+	"fmt"
 	"testing"
+
+	"github.com/kinsey40/pbar/render"
+	"github.com/stretchr/testify/assert"
 )
 
-// func TestMakeRenderObject(t *testing.T) {
-// 	mockCtrl := gomock.NewController(t)
-// 	defer mockCtrl.Finish()
+func TestMakeRenderObject(t *testing.T) {
+	testCases := []struct {
+		start float64
+		stop  float64
+		step  float64
+	}{
+		{0.0, 0.0, 0.0},
+	}
 
-// 	mockRenderInterface := mocks.NewMockRenderInterface(mockCtrl)
-// 	testCases := []struct {
-// 		startValue float64
-// 		stopValue  float64
-// 		stepValue  float64
-// 	}{
-// 		{float64(1), float64(3), float64(1)},
-// 	}
+	for _, testCase := range testCases {
+		renderObj := render.MakeRenderObject(testCase.start, testCase.stop, testCase.step)
+		assert.Equal(t, testCase.start, renderObj.StartValue, fmt.Sprintf(""))
+		assert.Equal(t, testCase.stop, renderObj.EndValue, fmt.Sprintf(""))
+		assert.Equal(t, testCase.step, renderObj.StepValue, fmt.Sprintf(""))
+		assert.Equal(t, testCase.start, renderObj.CurrentValue, fmt.Sprintf(""))
 
-// 	for _, testCase := range testCases {
-// 		renderObj := new(render.RenderObject)
-// 		renderObj.StartValue = testCase.startValue
+		assert.Equal(t, render.DefaultFinishedIterationSymbol, renderObj.FinishedIterationSymbol, fmt.Sprintf(""))
+		assert.Equal(t, render.DefaultCurrentIterationSymbol, renderObj.CurrentIterationSymbol, fmt.Sprintf(""))
+		assert.Equal(t, render.DefaultRemainingIterationSymbol, renderObj.RemainingIterationSymbol, fmt.Sprintf(""))
+		assert.Equal(t, render.DefaultLParen, renderObj.LParen, fmt.Sprintf(""))
+		assert.Equal(t, render.DefaultRParen, renderObj.RParen, fmt.Sprintf(""))
+		assert.Equal(t, render.DefaultMaxLineSize, renderObj.MaxLineSize, fmt.Sprintf(""))
+		assert.Equal(t, render.DefaultLineSize, renderObj.LineSize, fmt.Sprintf(""))
 
-// 		mockRenderInterface.EXPECT().MakeRenderObject(testCase.startValue, testCase.stopValue, testCase.stepValue).Return(renderObj).Times(1)
-// 		returnedRenderObj := mockRenderInterface.MakeRenderObject(testCase.startValue, testCase.stopValue, testCase.stepValue)
-
-// 		assert.Equal(t, testCase.startValue, returnedRenderObj.StartValue, fmt.Sprintf("Start values don't match, expected: %v; got: %v", testCase.startValue, returnedRenderObj.StartValue))
-
-// 	}
-// }
+		assert.Zero(t, renderObj.Description, fmt.Sprintf(""))
+	}
+}
 
 func TestUpdate(t *testing.T) {
+	// REQUIRES MOCKING
+}
 
+func TestInitialize(t *testing.T) {
+	// mockCtrl := gomock.NewController(t)
+	// defer mockCtrl.Finish()
+
+	// mockRenderInterface := mocks.NewMockRenderInterface(mockCtrl)
+	// renderObj := render.MakeRenderObject(0.0, 0.0, 0.0)
+	// testCases := []struct {
+	// 	timeValue    time.Time
+	// 	updateReturn error
+	// 	startValue   float64
+	// }{
+	// 	{time.Now(), nil, 0.0},
+	// }
+
+	// for _, testCase := range testCases {
+	// 	mockRenderInterface.EXPECT().Update(testCase.startValue).Return(testCase.updateReturn).Times(1)
+	// 	err := renderObj.Initialize(testCase.timeValue)
+
+	// 	// err := mockRenderInterface.Initialize(testCase.timeValue)
+	// 	// underlyingStruct := mockRenderInterface.(*render.RenderObject)
+
+	// 	assert.Equal(t,
+	// 		testCase.updateReturn,
+	// 		err,
+	// 		fmt.Sprintf("Errors not equal, expected: %v; got: %v", testCase.updateReturn, err))
+
+	// 	assert.Equal(t,
+	// 		testCase.timeValue,
+	// 		renderObj.StartTime,
+	// 		fmt.Sprintf("Times not equal, expected: %v; got: %v", testCase.timeValue, renderObj.StartTime))
+
+	// }
+	// // This is fine, but need to mock out the call to Update, as this may
+	// // or may not return an error and we need to check that if it does,
+	// // then the initialize function will also return that same error.
+
+	// // r := render.MakeRenderObject(0.0, 0.0, 0.0)
+	// // for i := 0; i < 10; i++ {
+	// // 	timeVal := time.Now()
+	// // 	err := r.Initialize(timeVal)
+
+	// // 	assert.Equal(t,
+	// // 		timeVal,
+	// // 		r.StartTime,
+	// // 		fmt.Sprintf("Times not equal, expected: %v; got: %v", timeVal, r.StartTime))
+	// // }
+}
+
+func TestDescription(t *testing.T) {
+	// 	mockCtrl := gomock.NewController(t)
+	// 	defer mockCtrl.Finish()
+
+	// 	mockPbarInterface := mocks.NewMockPbarInterface(mockCtrl)
+	// 	testCases := []struct {
+	// 		description    string
+	// 		expectedReturn string
+	// 		correct        bool
+	// 	}{
+	// 		{"Testing", "Testing", true},
+	// 		{"Another Test", "Another Test", true},
+	// 		{"Test", "Incorrect return", false},
+	// 	}
+
+	// 	for _, testCase := range testCases {
+	// 		mockPbarInterface.EXPECT().SetDescription(testCase.description).Return().Times(1)
+	// 		mockPbarInterface.EXPECT().GetDescription().Return(testCase.description).Times(1)
+
+	// 		mockPbarInterface.SetDescription(testCase.description)
+	// 		desc := mockPbarInterface.GetDescription()
+
+	// 		if desc != testCase.expectedReturn && testCase.correct {
+	// 			t.Fail(fmt.Sprintf("Incorrect description returned: %v, expected: %v", desc, testCase.expectedReturn))
+	// 		}
+
+	// 		if desc == testCase.expectedReturn && !testCase.correct {
+	// 			t.Fail(fmt.Sprintf("Incorrect description returned: %v, expected: %v", desc, testCase.expectedReturn))
+	// 		}
+	// 	}
+	// }
 }

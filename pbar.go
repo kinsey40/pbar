@@ -36,15 +36,12 @@ package pbar
 
 import (
 	"errors"
+	"fmt"
+	"reflect"
+	"time"
 
 	"github.com/kinsey40/pbar/render"
 )
-
-type iteratorInterface interface {
-	createIteratorFromObject(...interface{}) error
-	createIteratorFromValues(...interface{}) error
-	Update() error
-}
 
 type iterator struct {
 	start        float64
@@ -55,15 +52,22 @@ type iterator struct {
 	renderObject *render.RenderObject
 }
 
+func MakeIteratorObject() *iterator {
+	itr := new(iterator)
+	itr.renderObject = render.MakeRenderObject(itr.start, itr.stop, itr.step)
+
+	return itr
+}
+
 func Pbar(values ...interface{}) (*iterator, error) {
-	var itr *iterator
+	itr := MakeIteratorObject()
 	isObject, err := isObject(values...)
 
 	if err != nil {
 		return nil, err
 	}
 
-	if err := checkValues(isObject, values); err != nil {
+	if err = checkValues(isObject, values...); err != nil {
 		return nil, err
 	}
 
@@ -73,21 +77,25 @@ func Pbar(values ...interface{}) (*iterator, error) {
 		itr = createIteratorFromValues(values...)
 	}
 
-	itr.Update()
+	if err = itr.renderObject.Initialize(time.Now()); err != nil {
+		return nil, err
+	}
+
+	if err = itr.progress(); err != nil {
+		return nil, err
+	}
 
 	return itr, err
 }
 
 func (itr *iterator) Update() error {
-	itr.renderObject.Update(itr.current, itr.rendered)
-
-	if itr.current == itr.start && !itr.rendered {
-		itr.rendered = true
+	var err error
+	if err = itr.renderObject.Update(itr.current); err != nil {
+		return err
 	}
 
-	itr.current += itr.step
-	if itr.current > itr.stop {
-		return errors.New("Stop Iteration error")
+	if err = itr.progress(); err != nil {
+		return err
 	}
 
 	return nil
@@ -101,12 +109,12 @@ func (itr *iterator) GetDescription() string {
 	return itr.renderObject.Description
 }
 
-func (itr *iterator) SetIterationFinishedSymbol(newSymbol string) {
-	itr.renderObject.IterationFinishedSymbol = newSymbol
+func (itr *iterator) SetFinishedIterationSymbol(newSymbol string) {
+	itr.renderObject.FinishedIterationSymbol = newSymbol
 }
 
-func (itr *iterator) GetIterationFinishedSymbol() string {
-	return itr.renderObject.IterationFinishedSymbol
+func (itr *iterator) GetFinishedIterationSymbol() string {
+	return itr.renderObject.FinishedIterationSymbol
 }
 
 func (itr *iterator) SetCurrentIterationSymbol(newSymbol string) {
@@ -139,4 +147,117 @@ func (itr *iterator) SetRParen(newSymbol string) {
 
 func (itr *iterator) GetRParen() string {
 	return itr.renderObject.RParen
+}
+
+func convertToFloatValue(value interface{}) float64 {
+	floatValue := reflect.Indirect(reflect.ValueOf(value)).Convert(reflect.TypeOf(*new(float64))).Float()
+
+	return floatValue
+}
+
+func (itr *iterator) progress() error {
+	itr.current += itr.step
+	if itr.current > itr.stop {
+		return errors.New("Stop Iteration error")
+	}
+
+	return nil
+}
+
+func isObject(values ...interface{}) (bool, error) {
+	var isObject bool
+	var err error
+
+	for index, v := range values {
+		if isConvertibleToFloat(v) {
+			if index >= 1 && isObject {
+				err = errors.New("Mixed value types!")
+				break
+			}
+			isObject = false
+		} else if isValidObject(v) {
+			if index >= 1 && !isObject {
+				err = errors.New("Mixed value types!")
+				break
+			}
+			isObject = true
+		} else {
+			err = errors.New(fmt.Sprintf("Type: %v is not as number or valid object!", reflect.TypeOf(v)))
+			break
+		}
+	}
+
+	return isObject, err
+}
+
+func checkValues(isObject bool, values ...interface{}) error {
+	if isObject && len(values) != 1 {
+		return errors.New("Must only pass a single valid object!")
+	}
+
+	if !isObject && (len(values) < 1 || len(values) > 3) {
+		return errors.New("Expect 1, 2 or 3 parameters (stop); (start, stop) or (start, stop, step)")
+	}
+
+	if !isObject && len(values) > 1 && convertToFloatValue(values[0]) > convertToFloatValue(values[1]) {
+		return errors.New(
+			fmt.Sprintf("Start value (%v) is greater than stop value (%v)!",
+				convertToFloatValue(values[0]),
+				convertToFloatValue(values[1])))
+	}
+
+	return nil
+}
+
+func isConvertibleToFloat(v interface{}) bool {
+	return reflect.TypeOf(v).ConvertibleTo(reflect.TypeOf(*new(float64)))
+}
+
+func isValidObject(v interface{}) bool {
+	validObj := true
+	defer func() {
+		if r := recover(); r != nil {
+			validObj = false
+		}
+	}()
+	reflect.ValueOf(v).Len()
+
+	return validObj
+}
+
+func createIteratorFromObject(object interface{}) *iterator {
+	itr := new(iterator)
+	itr.start = 0.0
+	itr.stop = float64(reflect.ValueOf(object).Len())
+	itr.step = 1.0
+	itr.current = 0.0
+	itr.renderObject = render.MakeRenderObject(itr.start, itr.stop, itr.step)
+
+	return itr
+}
+
+func createIteratorFromValues(values ...interface{}) *iterator {
+	itr := new(iterator)
+	itr.step = 1.0
+	floatValues := make([]float64, 0)
+
+	for _, value := range values {
+		floatValues = append(floatValues, convertToFloatValue(value))
+	}
+
+	switch len(floatValues) {
+	case 1:
+		itr.stop = floatValues[0]
+	case 2:
+		itr.start = floatValues[0]
+		itr.stop = floatValues[1]
+	case 3:
+		itr.start = floatValues[0]
+		itr.stop = floatValues[1]
+		itr.step = floatValues[2]
+	}
+
+	itr.renderObject = render.MakeRenderObject(itr.start, itr.stop, itr.step)
+
+	return itr
 }
