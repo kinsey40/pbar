@@ -42,13 +42,12 @@ import (
 func TestMakeIteratorObject(t *testing.T) {
 	itr := MakeIteratorObject()
 
-	assert.Zero(t, itr.start, fmt.Sprintf("start not zero value: %v", itr.start))
-	assert.Zero(t, itr.stop, fmt.Sprintf("stop not zero value: %v", itr.start))
-	assert.Zero(t, itr.step, fmt.Sprintf("step not zero value: %v", itr.start))
-	assert.Zero(t, itr.current, fmt.Sprintf("current not zero value: %v", itr.start))
-	assert.Zero(t, itr.rendered, fmt.Sprintf("rendered not zero value: %v", itr.start))
+	assert.Zero(t, itr.Start, fmt.Sprintf("Start not zero value: %v", itr.Start))
+	assert.Zero(t, itr.Stop, fmt.Sprintf("Stop not zero value: %v", itr.Start))
+	assert.Zero(t, itr.Step, fmt.Sprintf("Step not zero value: %v", itr.Start))
+	assert.Zero(t, itr.Current, fmt.Sprintf("Current not zero value: %v", itr.Start))
 	assert.NotNil(t, itr, fmt.Sprintf("Iterator is nil!"))
-	assert.NotNil(t, itr.renderObject, fmt.Sprintf("renderObject is nil"))
+	assert.NotNil(t, itr.RenderObject, fmt.Sprintf("renderObject is nil"))
 }
 
 func TestIsConvertibleToFloat(t *testing.T) {
@@ -207,7 +206,7 @@ func TestCheckValues(t *testing.T) {
 	}
 }
 
-func TestProgess(t *testing.T) {
+func TestProgress(t *testing.T) {
 	testCases := []struct {
 		start            float64
 		stop             float64
@@ -223,10 +222,10 @@ func TestProgess(t *testing.T) {
 
 	for _, testCase := range testCases {
 		itr := new(iterator)
-		itr.start = testCase.start
-		itr.stop = testCase.stop
-		itr.step = testCase.step
-		itr.current = testCase.current
+		itr.Start = testCase.start
+		itr.Stop = testCase.stop
+		itr.Step = testCase.step
+		itr.Current = testCase.current
 
 		err := itr.progress()
 		if testCase.expectedError {
@@ -238,15 +237,103 @@ func TestProgess(t *testing.T) {
 }
 
 func TestCreateIteratorFromValues(t *testing.T) {
+	testCases := []struct {
+		values          []interface{}
+		expectedStart   float64
+		expectedStop    float64
+		expectedStep    float64
+		expectedCurrent float64
+	}{
+		{[]interface{}{float64(1.0), float64(5.0), float64(1.0)}, 1.0, 5.0, 1.0, 1.0},
+		{[]interface{}{float64(1.0)}, 0.0, 1.0, 1.0, 0.0},
+		{[]interface{}{float64(1.0), float64(5.0)}, 1.0, 5.0, 1.0, 1.0},
+	}
 
+	for _, testCase := range testCases {
+		obj := createIteratorFromValues(testCase.values...)
+
+		assert.NotNil(
+			t,
+			obj.RenderObject,
+			fmt.Sprintf("The render object is nil!"),
+		)
+
+		assert.Equal(
+			t,
+			testCase.expectedStart,
+			obj.Start,
+			fmt.Sprintf("Start Value incorrect expected: %f; got: %f", testCase.expectedStart, obj.Start),
+		)
+
+		assert.Equal(
+			t,
+			testCase.expectedStop,
+			obj.Stop,
+			fmt.Sprintf("Stop Value incorrect expected: %f; got: %f", testCase.expectedStop, obj.Stop),
+		)
+
+		assert.Equal(
+			t,
+			testCase.expectedStep,
+			obj.Step,
+			fmt.Sprintf("Step Value incorrect expected: %f; got: %f", testCase.expectedStep, obj.Step),
+		)
+
+		assert.Equal(
+			t,
+			testCase.expectedCurrent,
+			obj.Current,
+			fmt.Sprintf("Current Value incorrect expected: %f; got: %f", testCase.expectedCurrent, obj.Current),
+		)
+	}
 }
 
 func TestCreateIteratorFromObject(t *testing.T) {
-	// testCases := []struct {
-	// 	object	interface{}
-	// 	expectedStart	0.0
-	// 	expectedStop	0.0
-	// 	expectedStep	1.0
-	// 	expectedCurrent	0.0
-	// }
+	testCases := []struct {
+		object          interface{}
+		expectedStart   float64
+		expectedStop    float64
+		expectedStep    float64
+		expectedCurrent float64
+	}{
+		{[...]float64{1.0, 2.0, 3.0}, 0.0, 3.0, 1.0, 0.0},
+	}
+
+	for _, testCase := range testCases {
+		obj := createIteratorFromObject(testCase.object)
+
+		assert.NotNil(
+			t,
+			obj.RenderObject,
+			fmt.Sprintf("The render object is nil!"),
+		)
+
+		assert.Equal(
+			t,
+			testCase.expectedStart,
+			obj.Start,
+			fmt.Sprintf("Start Value incorrect expected: %f; got: %f", testCase.expectedStart, obj.Start),
+		)
+
+		assert.Equal(
+			t,
+			testCase.expectedStop,
+			obj.Stop,
+			fmt.Sprintf("Stop Value incorrect expected: %f; got: %f", testCase.expectedStop, obj.Stop),
+		)
+
+		assert.Equal(
+			t,
+			testCase.expectedStep,
+			obj.Step,
+			fmt.Sprintf("Step Value incorrect expected: %f; got: %f", testCase.expectedStep, obj.Step),
+		)
+
+		assert.Equal(
+			t,
+			testCase.expectedCurrent,
+			obj.Current,
+			fmt.Sprintf("Current Value incorrect expected: %f; got: %f", testCase.expectedCurrent, obj.Current),
+		)
+	}
 }

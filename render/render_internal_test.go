@@ -33,6 +33,7 @@
 package render
 
 import (
+	"bytes"
 	"fmt"
 	"testing"
 	"time"
@@ -41,21 +42,104 @@ import (
 )
 
 func TestRender(t *testing.T) {
-	// mockCtrl := gomock.NewController(t)
-	// defer mockCtrl.Finish()
+	testCases := []struct {
+		startVal       float64
+		endVal         float64
+		currentVal     float64
+		stepVal        float64
+		buffer         *bytes.Buffer
+		inputString    string
+		expectedOutput string
+		expectError    bool
+	}{
+		{0.0, 5.0, 1.0, 1.0, new(bytes.Buffer), "Hello", "\rHello", false},
+	}
 
-	// mockRenderInterface := mocks.NewMockRenderInterface(mockCtrl)
+	for _, testCase := range testCases {
+		r := MakeRenderObject(testCase.startVal, testCase.endVal, testCase.stepVal)
+		r.W = testCase.buffer
+		err := r.render(testCase.inputString)
 
+		got := testCase.buffer.String()
+
+		if testCase.expectError {
+			assert.Error(t, err, fmt.Sprintf("Expected error not raised!"))
+		} else {
+			assert.NoError(t, err, fmt.Sprintf("Unexpected error raised: %v", err))
+		}
+
+		assert.Equal(
+			t,
+			testCase.expectedOutput,
+			got,
+			fmt.Sprintf("Outputted string incorrect expected: %s; got %s", testCase.expectedOutput, got),
+		)
+	}
 }
 
 func TestFormatProgressBar(t *testing.T) {
-	// Testing this will require use of MOCKS!
+	testCases := []struct {
+		startVal        float64
+		currentVal      float64
+		endVal          float64
+		stepVal         float64
+		description     string
+		startUnixSecs   int64
+		currentUnixSecs int64
+		lineSize        int
+		lParen          string
+		rParen          string
+		remIterSymbol   string
+		finIterSymbol   string
+		curIterSymbol   string
+		expectedOutput  string
+	}{
+		{0.0, 1.0, 5.0, 1.0, "", 5, 10, 10, "|", "|", "-", "#", "#", " |##--------| 1.0/5.0 20.0% [elapsed: 00m:05s, left: 00m:20s, 0.20 iters/sec]"},
+	}
+
+	for _, testCase := range testCases {
+		r := MakeRenderObject(testCase.startVal, testCase.endVal, testCase.stepVal)
+		r.CurrentValue = testCase.currentVal
+		r.StartTime = time.Unix(testCase.startUnixSecs, 0)
+		pbar := r.formatProgressBar(time.Unix(testCase.currentUnixSecs, 0))
+		message := fmt.Sprintf(
+			"Progress bar incorrect, expected: %s; got %s",
+			testCase.expectedOutput,
+			pbar,
+		)
+
+		assert.Equal(t, testCase.expectedOutput, pbar, message)
+	}
 }
 
-func TestFormatSpeedMeter(t *testing.T) {
-	// Need some way of mocking time.Now() or setting it to a set value
-	// so that when it gets called, it will give an answer I already
-	// know
+func TestGetSpeedMeter(t *testing.T) {
+	testCases := []struct {
+		startVal        float64
+		currentVal      float64
+		endVal          float64
+		stepVal         float64
+		startUnixSecs   int64
+		currentUnixSecs int64
+		expectedOutput  string
+	}{
+		{0.0, 0.0, 5.0, 1.0, 5, 10, "[elapsed: 00m:00s, left: N/A, N/A iters/sec]"},
+		{0.0, 1.0, 5.0, 1.0, 5, 10, "[elapsed: 00m:05s, left: 00m:20s, 0.20 iters/sec]"},
+	}
+
+	for _, testCase := range testCases {
+		r := MakeRenderObject(testCase.startVal, testCase.endVal, testCase.stepVal)
+		r.CurrentValue = testCase.currentVal
+		r.StartTime = time.Unix(testCase.startUnixSecs, 0)
+		speedMeter := r.getSpeedMeter(time.Unix(testCase.currentUnixSecs, 0))
+
+		message := fmt.Sprintf(
+			"Speed Meter incorrect expected: %s; got: %s",
+			testCase.expectedOutput,
+			speedMeter,
+		)
+
+		assert.Equal(t, testCase.expectedOutput, speedMeter, message)
+	}
 }
 
 func TestGetBarString(t *testing.T) {
@@ -126,6 +210,7 @@ func TestFormatTime(t *testing.T) {
 		expectedString string
 	}{
 		{time.Duration(10) * time.Second, "00m:10s"},
+		{time.Duration(10000) * time.Second, "02h:46m:40s"},
 	}
 
 	for _, testCase := range testCases {

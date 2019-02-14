@@ -9,8 +9,81 @@ import (
 
 func iterateUsingArray() {
 	x := [5]int{1, 2, 3, 4, 5}
-	t, _ := pbar.Pbar(x)
+	t, err := pbar.Pbar(x)
+	if err != nil {
+		panic(err)
+	}
 
+	t.SetDescription("Array")
+	t.Initialize()
+	for range x {
+		time.Sleep(time.Second * 1)
+		t.Update()
+	}
+}
+
+func iterateUsingString() {
+	x := "abcde"
+	t, err := pbar.Pbar(x)
+	if err != nil {
+		panic(err)
+	}
+
+	t.SetDescription("String")
+	t.Initialize()
+	for range x {
+		time.Sleep(time.Second * 1)
+		t.Update()
+	}
+}
+
+func iterateUsingSlice() {
+	x := []int{1, 2, 3, 4, 5}
+	t, err := pbar.Pbar(x)
+	if err != nil {
+		panic(err)
+	}
+
+	t.SetDescription("Slice")
+	t.Initialize()
+	for range x[:] {
+		time.Sleep(time.Second * 1)
+		if t != nil {
+			t.Update()
+		}
+	}
+}
+
+func iterateUsingChannel() {
+	size := 5
+	x := make(chan int, size)
+	for index := 0; index < size; index++ {
+		x <- index
+	}
+
+	close(x)
+	t, err := pbar.Pbar(x)
+	if err != nil {
+		panic(err)
+	}
+
+	t.SetDescription("Channel")
+	t.Initialize()
+	for range x {
+		time.Sleep(time.Second * 1)
+		t.Update()
+	}
+}
+
+func iterateUsingMap() {
+	x := map[string]string{"1": "a", "2": "b", "3": "c", "4": "d", "5": "e"}
+	t, err := pbar.Pbar(x)
+	if err != nil {
+		panic(err)
+	}
+
+	t.SetDescription("Map")
+	t.Initialize()
 	for range x {
 		time.Sleep(time.Second * 1)
 		t.Update()
@@ -20,14 +93,14 @@ func iterateUsingArray() {
 func iterateUsingValues() {
 	t, err := pbar.Pbar(10)
 	if err != nil {
-		fmt.Println(err)
+		panic(err)
 	}
 
+	t.SetDescription("Values")
+	t.Initialize()
 	for i := 0; i < 10; i++ {
 		time.Sleep(time.Second * 1)
-		if t != nil {
-			t.Update()
-		}
+		t.Update()
 	}
 }
 
@@ -58,30 +131,15 @@ func multipleIterators() {
 	p.Update()
 }
 
-// Need an initialize function which does not take into account the
-// start, it merely displays the value to the screen.
-// The timer should only start on the first Update.
-
-// func multipleProgressBars() {
-// 	t, err := pbar.Pbar(10)
-
-// 	for i := 0; i < 10; i++ {
-// 		t.Update()
-// 		time.Sleep(time.Second * 1)
-// 		tq, err := pbar.Pbar(5)
-// 		for j := 0; j < 5; j++ {
-// 			tq.Update()
-// 			time.Sleep(time.Second * 1)
-// 		}
-// 		tq.Update()
-// 	}
-// 	t.Update()
-// }
-
 func main() {
-	multipleIterators()
-	// iterateUsingArray()
-	// iterateUsingValues()
+	// multipleIterators()
+
+	iterateUsingArray()
+	iterateUsingString()
+	iterateUsingMap()
+	iterateUsingChannel()
+	iterateUsingSlice()
+	iterateUsingValues()
 }
 
 /* ******

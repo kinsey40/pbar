@@ -33,8 +33,10 @@
 package render_test
 
 import (
+	"bytes"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/kinsey40/pbar/render"
 	"github.com/stretchr/testify/assert"
@@ -50,105 +52,151 @@ func TestMakeRenderObject(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		renderObj := render.MakeRenderObject(testCase.start, testCase.stop, testCase.step)
-		assert.Equal(t, testCase.start, renderObj.StartValue, fmt.Sprintf(""))
-		assert.Equal(t, testCase.stop, renderObj.EndValue, fmt.Sprintf(""))
-		assert.Equal(t, testCase.step, renderObj.StepValue, fmt.Sprintf(""))
-		assert.Equal(t, testCase.start, renderObj.CurrentValue, fmt.Sprintf(""))
+		r := render.MakeRenderObject(testCase.start, testCase.stop, testCase.step)
+		assert.Equal(
+			t,
+			testCase.start,
+			r.StartValue,
+			fmt.Sprintf("Start values unequal expected: %v; got %v", testCase.start, r.StartValue),
+		)
 
-		assert.Equal(t, render.DefaultFinishedIterationSymbol, renderObj.FinishedIterationSymbol, fmt.Sprintf(""))
-		assert.Equal(t, render.DefaultCurrentIterationSymbol, renderObj.CurrentIterationSymbol, fmt.Sprintf(""))
-		assert.Equal(t, render.DefaultRemainingIterationSymbol, renderObj.RemainingIterationSymbol, fmt.Sprintf(""))
-		assert.Equal(t, render.DefaultLParen, renderObj.LParen, fmt.Sprintf(""))
-		assert.Equal(t, render.DefaultRParen, renderObj.RParen, fmt.Sprintf(""))
-		assert.Equal(t, render.DefaultMaxLineSize, renderObj.MaxLineSize, fmt.Sprintf(""))
-		assert.Equal(t, render.DefaultLineSize, renderObj.LineSize, fmt.Sprintf(""))
+		assert.Equal(
+			t,
+			testCase.stop,
+			r.EndValue,
+			fmt.Sprintf("End values unqueal expected: %v; got: %v", testCase.stop, r.EndValue),
+		)
 
-		assert.Zero(t, renderObj.Description, fmt.Sprintf(""))
+		assert.Equal(
+			t,
+			testCase.step,
+			r.StepValue,
+			fmt.Sprintf("Step values unqueal expected: %v; got: %v", testCase.step, r.StepValue),
+		)
+
+		assert.Equal(
+			t,
+			testCase.start,
+			r.CurrentValue,
+			fmt.Sprintf("Current values unqueal expected: %v; got: %v", testCase.start, r.CurrentValue),
+		)
+
+		assert.Equal(
+			t,
+			render.DefaultFinishedIterationSymbol,
+			r.FinishedIterationSymbol,
+			fmt.Sprintf("Finished Iteration Symbol unqueal expected: %v; got: %v", render.DefaultFinishedIterationSymbol, r.FinishedIterationSymbol),
+		)
+
+		assert.Equal(
+			t,
+			render.DefaultCurrentIterationSymbol,
+			r.CurrentIterationSymbol,
+			fmt.Sprintf("Current Iteration Symbol unqueal expected: %v; got: %v", render.DefaultCurrentIterationSymbol, r.CurrentIterationSymbol),
+		)
+
+		assert.Equal(
+			t,
+			render.DefaultRemainingIterationSymbol,
+			r.RemainingIterationSymbol,
+			fmt.Sprintf("Remaining Iteration Symbol unqueal expected: %v; got: %v", render.DefaultRemainingIterationSymbol, r.RemainingIterationSymbol),
+		)
+
+		assert.Equal(
+			t,
+			render.DefaultLParen,
+			r.LParen,
+			fmt.Sprintf("LParen Symbol unequal expected: %v; got: %v", render.DefaultLParen, r.LParen),
+		)
+
+		assert.Equal(
+			t,
+			render.DefaultRParen,
+			r.RParen,
+			fmt.Sprintf("RParen Symbol unqueal expected: %v; got: %v", render.DefaultRParen, r.RParen),
+		)
+
+		assert.Equal(
+			t,
+			render.DefaultMaxLineSize,
+			r.MaxLineSize,
+			fmt.Sprintf("Max Line Size unqueal expected: %v; got: %v", render.DefaultMaxLineSize, r.MaxLineSize),
+		)
+
+		assert.Equal(
+			t,
+			render.DefaultLineSize,
+			r.LineSize,
+			fmt.Sprintf("Line Size unqueal expected: %v; got: %v", render.DefaultLineSize, r.LineSize),
+		)
+
+		assert.Zero(
+			t,
+			r.Description,
+			fmt.Sprintf("End values unqueal expected: %v; got: %v", "", r.Description),
+		)
 	}
 }
 
 func TestUpdate(t *testing.T) {
-	// REQUIRES MOCKING
+	testCases := []struct {
+		startVal        float64
+		stopVal         float64
+		stepVal         float64
+		currentVal      float64
+		startUnixSecs   int64
+		currentUnixSecs int64
+		buffer          *bytes.Buffer
+		expectError     bool
+		expectedOutput  string
+	}{
+		{0.0, 5.0, 1.0, 5.0, 5.0, 10.0, new(bytes.Buffer), false, "\r |##########| 5.0/5.0 100.0% [elapsed: 00m:05s, left: 00m:00s, 1.00 iters/sec]\n"},
+		{0.0, 5.0, 1.0, 1.0, 5.0, 10.0, new(bytes.Buffer), false, "\r |##--------| 1.0/5.0 20.0% [elapsed: 00m:05s, left: 00m:20s, 0.20 iters/sec]"},
+	}
+
+	for _, testCase := range testCases {
+		r := render.MakeRenderObject(testCase.startVal, testCase.stopVal, testCase.stepVal)
+		r.W = testCase.buffer
+		r.Initialize(time.Unix(testCase.startUnixSecs, 0.0))
+
+		err := r.Update(testCase.currentVal, time.Unix(testCase.currentUnixSecs, 0.0))
+		got := testCase.buffer.String()
+
+		if testCase.expectError {
+			assert.Error(t, err, fmt.Sprintf("Expected Error not raised"))
+		} else {
+			assert.NoError(t, err, fmt.Sprintf("Unexpected Error raised"))
+		}
+
+		assert.Equal(
+			t,
+			testCase.expectedOutput,
+			got,
+			fmt.Sprintf("String not equal, expected: %s; got: %s", testCase.expectedOutput, got),
+		)
+	}
 }
 
 func TestInitialize(t *testing.T) {
-	// mockCtrl := gomock.NewController(t)
-	// defer mockCtrl.Finish()
+	testCases := []struct {
+		startVal      float64
+		endVal        float64
+		stepVal       float64
+		startUnixSecs int64
+	}{
+		{0.0, 5.0, 1.0, 10},
+	}
 
-	// mockRenderInterface := mocks.NewMockRenderInterface(mockCtrl)
-	// renderObj := render.MakeRenderObject(0.0, 0.0, 0.0)
-	// testCases := []struct {
-	// 	timeValue    time.Time
-	// 	updateReturn error
-	// 	startValue   float64
-	// }{
-	// 	{time.Now(), nil, 0.0},
-	// }
+	for _, testCase := range testCases {
+		r := render.MakeRenderObject(testCase.startVal, testCase.endVal, testCase.stepVal)
+		startTime := time.Unix(testCase.startUnixSecs, 0)
+		r.Initialize(startTime)
+		message := fmt.Sprintf(
+			"Times not equal expected: %v; got %v",
+			startTime,
+			r.StartTime,
+		)
 
-	// for _, testCase := range testCases {
-	// 	mockRenderInterface.EXPECT().Update(testCase.startValue).Return(testCase.updateReturn).Times(1)
-	// 	err := renderObj.Initialize(testCase.timeValue)
-
-	// 	// err := mockRenderInterface.Initialize(testCase.timeValue)
-	// 	// underlyingStruct := mockRenderInterface.(*render.RenderObject)
-
-	// 	assert.Equal(t,
-	// 		testCase.updateReturn,
-	// 		err,
-	// 		fmt.Sprintf("Errors not equal, expected: %v; got: %v", testCase.updateReturn, err))
-
-	// 	assert.Equal(t,
-	// 		testCase.timeValue,
-	// 		renderObj.StartTime,
-	// 		fmt.Sprintf("Times not equal, expected: %v; got: %v", testCase.timeValue, renderObj.StartTime))
-
-	// }
-	// // This is fine, but need to mock out the call to Update, as this may
-	// // or may not return an error and we need to check that if it does,
-	// // then the initialize function will also return that same error.
-
-	// // r := render.MakeRenderObject(0.0, 0.0, 0.0)
-	// // for i := 0; i < 10; i++ {
-	// // 	timeVal := time.Now()
-	// // 	err := r.Initialize(timeVal)
-
-	// // 	assert.Equal(t,
-	// // 		timeVal,
-	// // 		r.StartTime,
-	// // 		fmt.Sprintf("Times not equal, expected: %v; got: %v", timeVal, r.StartTime))
-	// // }
-}
-
-func TestDescription(t *testing.T) {
-	// 	mockCtrl := gomock.NewController(t)
-	// 	defer mockCtrl.Finish()
-
-	// 	mockPbarInterface := mocks.NewMockPbarInterface(mockCtrl)
-	// 	testCases := []struct {
-	// 		description    string
-	// 		expectedReturn string
-	// 		correct        bool
-	// 	}{
-	// 		{"Testing", "Testing", true},
-	// 		{"Another Test", "Another Test", true},
-	// 		{"Test", "Incorrect return", false},
-	// 	}
-
-	// 	for _, testCase := range testCases {
-	// 		mockPbarInterface.EXPECT().SetDescription(testCase.description).Return().Times(1)
-	// 		mockPbarInterface.EXPECT().GetDescription().Return(testCase.description).Times(1)
-
-	// 		mockPbarInterface.SetDescription(testCase.description)
-	// 		desc := mockPbarInterface.GetDescription()
-
-	// 		if desc != testCase.expectedReturn && testCase.correct {
-	// 			t.Fail(fmt.Sprintf("Incorrect description returned: %v, expected: %v", desc, testCase.expectedReturn))
-	// 		}
-
-	// 		if desc == testCase.expectedReturn && !testCase.correct {
-	// 			t.Fail(fmt.Sprintf("Incorrect description returned: %v, expected: %v", desc, testCase.expectedReturn))
-	// 		}
-	// 	}
-	// }
+		assert.Equal(t, startTime, r.StartTime, message)
+	}
 }

@@ -50,15 +50,6 @@ var DefaultRParen = "|"
 var DefaultMaxLineSize = 80
 var DefaultLineSize = 10
 
-type RenderInterface interface {
-	MakeRenderObject(float64, float64, float64) interface{}
-	Initialize(time.Time) error
-	Update(float64) error
-	render(string) error
-	formatProgressBar() string
-	formatSpeedMeter() error
-}
-
 type RenderObject struct {
 	W                        io.Writer
 	StartValue               float64
@@ -94,26 +85,20 @@ func MakeRenderObject(startValue, endValue, stepValue float64) *RenderObject {
 	return renderObj
 }
 
-func (r *RenderObject) Initialize(timeVal time.Time) error {
+func (r *RenderObject) Initialize(timeVal time.Time) {
 	r.StartTime = timeVal
-	err := r.Update(r.StartValue)
-
-	return err
 }
 
-func (r *RenderObject) Update(currentValue float64) error {
+func (r *RenderObject) Update(currentValue float64, timeVal time.Time) error {
 	r.CurrentValue = currentValue
-	wholeProgressBar := r.formatProgressBar()
+	wholeProgressBar := r.formatProgressBar(timeVal)
 
 	if currentValue == r.EndValue {
 		wholeProgressBar += "\n"
 	}
+	err := r.render(wholeProgressBar)
 
-	if err := r.render(wholeProgressBar); err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 func (r *RenderObject) render(s string) error {
@@ -131,7 +116,7 @@ func (r *RenderObject) render(s string) error {
 	return nil
 }
 
-func (r *RenderObject) formatProgressBar() string {
+func (r *RenderObject) formatProgressBar(timeVal time.Time) string {
 	statistics, numStepsCompleted := r.getStatistics()
 	barString := r.getBarString(numStepsCompleted)
 	bar := fmt.Sprintf("%s%s%s",
@@ -139,7 +124,7 @@ func (r *RenderObject) formatProgressBar() string {
 		barString,
 		r.RParen)
 
-	speedMeter := r.getSpeedMeter()
+	speedMeter := r.getSpeedMeter(timeVal)
 	progressBar := strings.Join([]string{r.Description, bar, statistics, speedMeter}, " ")
 
 	return progressBar
@@ -179,23 +164,24 @@ func (r *RenderObject) getBarString(numStepsCompleted int) string {
 	return barString
 }
 
-func (r *RenderObject) getSpeedMeter() string {
+func (r *RenderObject) getSpeedMeter(timeVal time.Time) string {
 	if r.CurrentValue > r.StartValue {
-		elapsed := time.Now().Sub(r.StartTime)
+		elapsed := timeVal.Sub(r.StartTime)
 		rate := (r.CurrentValue - r.StartValue) / elapsed.Seconds()
-		remainingTime := time.Duration(math.Round((r.EndValue-r.CurrentValue)*rate)) * time.Second
+		remainingTime := time.Duration(math.Round((r.EndValue-r.CurrentValue)/rate)) * time.Second
 
 		return fmt.Sprintf("[elapsed: %s, left: %s, %.2f iters/sec]",
 			formatTime(elapsed),
 			formatTime(remainingTime),
-			rate)
-
-	} else {
-		return fmt.Sprintf("[elapsed: %s, left: %s, %s iters/sec]",
-			"00:00s",
-			"N/A",
-			"N/A")
+			rate,
+		)
 	}
+
+	return fmt.Sprintf("[elapsed: %s, left: %s, %s iters/sec]",
+		"00m:00s",
+		"N/A",
+		"N/A",
+	)
 }
 
 func formatTime(d time.Duration) string {

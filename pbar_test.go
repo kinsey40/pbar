@@ -40,6 +40,47 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestMakeIteratorObject(t *testing.T) {
+	itr := pbar.MakeIteratorObject()
+
+	assert.Equal(t, 0.0, itr.Start, "Start value is not 0!")
+	assert.Equal(t, 0.0, itr.Stop, "Stop value is not 0!")
+	assert.Equal(t, 0.0, itr.Step, "Step value is not 0!")
+	assert.Equal(t, 0.0, itr.Current, "Current value is not 0!")
+	assert.NotNil(t, itr.RenderObject, "Render Object is nil!")
+}
+
+func TestInitialize(t *testing.T) {
+	// Requires mocking of the time module
+}
+
+// func TestUpdate(t *testing.T) {
+// 	Requires mocking of the time module
+// 	testCases := []struct {
+// 		startVal             float64
+// 		stopVal              float64
+// 		stepVal              float64
+// 		currentVal           float64
+// 		buffer               *bytes.Buffer
+// 		expectedOutput       string
+// 		expectedCurrentValue float64
+// 	}{
+// 		{0.0, 5.0, 1.0, 1.0, new(bytes.Buffer), "", 2.0},
+// 	}
+
+// 	for _, testCase := range testCases {
+// 		r := render.MakeRenderObject(testCase.startVal, testCase.stopVal, testCase.stepVal)
+// 		r.W = testCase.buffer
+// 		r.Initialize(time.Now())
+// 		r.Update(testCase.currentVal)
+
+// 		got := testCase.buffer.String()
+
+// 		assert.Equal(t, testCase.expectedOutput, got, fmt.Sprintf(""))
+// 		assert.Equal(t, testCase.expectedCurrentValue, r.CurrentValue, fmt.Sprintf(""))
+// 	}
+// }
+
 func TestPbar(t *testing.T) {
 	testCases := []struct {
 		values      []interface{}
@@ -50,8 +91,11 @@ func TestPbar(t *testing.T) {
 		{[]interface{}{complex128(1)}, true},
 		{[]interface{}{}, true},
 		{[]interface{}{float64(2), float64(1), float64(1)}, true},
-		{[]interface{}{float64(1), float64(2), float64(100)}, true},
+		{[]interface{}{float64(1), float64(2), float64(100)}, false},
 		{[]interface{}{float64(1), float64(10), float64(1)}, false},
+		{[]interface{}{[]int{1, 2, 3}}, false},
+		{[]interface{}{"Hello!"}, false},
+		{[]interface{}{map[string]int{"1": 1, "2": 2}}, false},
 	}
 
 	for _, testCase := range testCases {
@@ -66,15 +110,7 @@ func TestPbar(t *testing.T) {
 	}
 }
 
-func TestUpdate(t *testing.T) {
-	// testCases := []struct {
-	// 	values []interface{}
-	// 	expectError	bool
-	// }
-
-}
-
-func TestSetGetDescription(t *testing.T) {
+func TestSetDescription(t *testing.T) {
 	itr := pbar.MakeIteratorObject()
 	testCases := []struct {
 		desc           string
@@ -86,7 +122,7 @@ func TestSetGetDescription(t *testing.T) {
 
 	for _, testCase := range testCases {
 		itr.SetDescription(testCase.desc)
-		returnedDesc := itr.GetDescription()
+		returnedDesc := itr.RenderObject.Description
 
 		assert.Equal(t,
 			testCase.expectedPrefix,
@@ -95,7 +131,7 @@ func TestSetGetDescription(t *testing.T) {
 	}
 }
 
-func TestSetGetFinishedIterationSymbol(t *testing.T) {
+func TestSetFinishedIterationSymbol(t *testing.T) {
 	itr := pbar.MakeIteratorObject()
 	testCases := []struct {
 		symbol string
@@ -106,7 +142,7 @@ func TestSetGetFinishedIterationSymbol(t *testing.T) {
 
 	for _, testCase := range testCases {
 		itr.SetFinishedIterationSymbol(testCase.symbol)
-		returnedSymbol := itr.GetFinishedIterationSymbol()
+		returnedSymbol := itr.RenderObject.FinishedIterationSymbol
 
 		assert.Equal(t,
 			testCase.symbol,
@@ -115,7 +151,7 @@ func TestSetGetFinishedIterationSymbol(t *testing.T) {
 	}
 }
 
-func TestSetGetCurrentIterationSymbol(t *testing.T) {
+func TestSetCurrentIterationSymbol(t *testing.T) {
 	itr := pbar.MakeIteratorObject()
 	testCases := []struct {
 		symbol string
@@ -126,7 +162,7 @@ func TestSetGetCurrentIterationSymbol(t *testing.T) {
 
 	for _, testCase := range testCases {
 		itr.SetCurrentIterationSymbol(testCase.symbol)
-		returnedSymbol := itr.GetCurrentIterationSymbol()
+		returnedSymbol := itr.RenderObject.CurrentIterationSymbol
 
 		assert.Equal(t,
 			testCase.symbol,
@@ -135,7 +171,7 @@ func TestSetGetCurrentIterationSymbol(t *testing.T) {
 	}
 }
 
-func TestSetGetRemainingIterationSymbol(t *testing.T) {
+func TestSetRemainingIterationSymbol(t *testing.T) {
 	itr := pbar.MakeIteratorObject()
 	testCases := []struct {
 		symbol string
@@ -146,7 +182,7 @@ func TestSetGetRemainingIterationSymbol(t *testing.T) {
 
 	for _, testCase := range testCases {
 		itr.SetRemainingIterationSymbol(testCase.symbol)
-		returnedSymbol := itr.GetRemainingIterationSymbol()
+		returnedSymbol := itr.RenderObject.RemainingIterationSymbol
 
 		assert.Equal(t,
 			testCase.symbol,
@@ -155,7 +191,7 @@ func TestSetGetRemainingIterationSymbol(t *testing.T) {
 	}
 }
 
-func TestSetGetLParenSymbol(t *testing.T) {
+func TestSetLParenSymbol(t *testing.T) {
 	itr := pbar.MakeIteratorObject()
 	testCases := []struct {
 		symbol string
@@ -166,7 +202,7 @@ func TestSetGetLParenSymbol(t *testing.T) {
 
 	for _, testCase := range testCases {
 		itr.SetLParen(testCase.symbol)
-		returnedSymbol := itr.GetLParen()
+		returnedSymbol := itr.RenderObject.LParen
 
 		assert.Equal(t,
 			testCase.symbol,
@@ -175,7 +211,7 @@ func TestSetGetLParenSymbol(t *testing.T) {
 	}
 }
 
-func TestSetGetRParenSymbol(t *testing.T) {
+func TestSetRParenSymbol(t *testing.T) {
 	itr := pbar.MakeIteratorObject()
 	testCases := []struct {
 		symbol string
@@ -186,7 +222,7 @@ func TestSetGetRParenSymbol(t *testing.T) {
 
 	for _, testCase := range testCases {
 		itr.SetRParen(testCase.symbol)
-		returnedSymbol := itr.GetRParen()
+		returnedSymbol := itr.RenderObject.RParen
 
 		assert.Equal(t,
 			testCase.symbol,
@@ -194,75 +230,3 @@ func TestSetGetRParenSymbol(t *testing.T) {
 			fmt.Sprintf("Descriptions not equal; expected: %s, got: %s", testCase.symbol, returnedSymbol))
 	}
 }
-
-// import (
-// 	"fmt"
-// 	"testing"
-
-// 	"github.com/golang/mock/gomock"
-// )
-
-// func TestDescription(t *testing.T) {
-// 	mockCtrl := gomock.NewController(t)
-// 	defer mockCtrl.Finish()
-
-// 	mockPbarInterface := mocks.NewMockPbarInterface(mockCtrl)
-// 	testCases := []struct {
-// 		description    string
-// 		expectedReturn string
-// 		correct        bool
-// 	}{
-// 		{"Testing", "Testing", true},
-// 		{"Another Test", "Another Test", true},
-// 		{"Test", "Incorrect return", false},
-// 	}
-
-// 	for _, testCase := range testCases {
-// 		mockPbarInterface.EXPECT().SetDescription(testCase.description).Return().Times(1)
-// 		mockPbarInterface.EXPECT().GetDescription().Return(testCase.description).Times(1)
-
-// 		mockPbarInterface.SetDescription(testCase.description)
-// 		desc := mockPbarInterface.GetDescription()
-
-// 		if desc != testCase.expectedReturn && testCase.correct {
-// 			t.Fail(fmt.Sprintf("Incorrect description returned: %v, expected: %v", desc, testCase.expectedReturn))
-// 		}
-
-// 		if desc == testCase.expectedReturn && !testCase.correct {
-// 			t.Fail(fmt.Sprintf("Incorrect description returned: %v, expected: %v", desc, testCase.expectedReturn))
-// 		}
-// 	}
-// }
-
-// func TestRetain(t *testing.T) {
-// 	mockCtrl := gomock.NewController(t)
-// 	defer mockCtrl.Finish()
-
-// 	mockPbarInterface := mocks.NewMockPbarInterface(mockCtrl)
-// 	testCases := []struct {
-// 		retain         bool
-// 		expectedReturn bool
-// 		correct        bool
-// 	}{
-// 		{true, true, true},
-// 		{false, false, true},
-// 		{true, false, false},
-// 		{false, true, false},
-// 	}
-
-// 	for _, testCase := range testCases {
-// 		mockPbarInterface.EXPECT().SetRetain(testCase.retain).Return().Times(1)
-// 		mockPbarInterface.EXPECT().GetRetain().Return(testCase.retain).Times(1)
-
-// 		mockPbarInterface.SetRetain(testCase.retain)
-// 		ret := mockPbarInterface.GetRetain()
-
-// 		if ret != testCase.expectedReturn && testCase.correct {
-// 			t.Fail(fmt.Sprintf("Incorrect description returned: %v, expected: %v", ret, testCase.expectedReturn))
-// 		}
-
-// 		if ret == testCase.expectedReturn && !testCase.correct {
-// 			t.Fail(fmt.Sprintf("Incorrect description returned: %v, expected: %v", ret, testCase.expectedReturn))
-// 		}
-// 	}
-// }

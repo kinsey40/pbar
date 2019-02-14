@@ -44,17 +44,16 @@ import (
 )
 
 type iterator struct {
-	start        float64
-	stop         float64
-	step         float64
-	current      float64
-	rendered     bool
-	renderObject *render.RenderObject
+	Start        float64
+	Stop         float64
+	Step         float64
+	Current      float64
+	RenderObject *render.RenderObject
 }
 
 func MakeIteratorObject() *iterator {
 	itr := new(iterator)
-	itr.renderObject = render.MakeRenderObject(itr.start, itr.stop, itr.step)
+	itr.RenderObject = render.MakeRenderObject(itr.Start, itr.Stop, itr.Step)
 
 	return itr
 }
@@ -77,91 +76,65 @@ func Pbar(values ...interface{}) (*iterator, error) {
 		itr = createIteratorFromValues(values...)
 	}
 
-	if err = itr.renderObject.Initialize(time.Now()); err != nil {
-		return nil, err
-	}
-
-	if err = itr.progress(); err != nil {
-		return nil, err
-	}
-
 	return itr, err
 }
 
-func (itr *iterator) Update() error {
-	var err error
-	if err = itr.renderObject.Update(itr.current); err != nil {
-		return err
-	}
-
-	if err = itr.progress(); err != nil {
+func (itr *iterator) Initialize() error {
+	itr.RenderObject.Initialize(time.Now())
+	if err := itr.Update(); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (itr *iterator) SetDescription(descrip string) {
-	itr.renderObject.Description = descrip + ": "
+func (itr *iterator) Update() error {
+	var err error
+	if err = itr.RenderObject.Update(itr.Current, time.Now()); err != nil {
+		return err
+	}
+
+	err = itr.progress()
+	return err
 }
 
-func (itr *iterator) GetDescription() string {
-	return itr.renderObject.Description
+func (itr *iterator) SetDescription(descrip string) {
+	itr.RenderObject.Description = descrip + ": "
 }
 
 func (itr *iterator) SetFinishedIterationSymbol(newSymbol string) {
-	itr.renderObject.FinishedIterationSymbol = newSymbol
-}
-
-func (itr *iterator) GetFinishedIterationSymbol() string {
-	return itr.renderObject.FinishedIterationSymbol
+	itr.RenderObject.FinishedIterationSymbol = newSymbol
 }
 
 func (itr *iterator) SetCurrentIterationSymbol(newSymbol string) {
-	itr.renderObject.CurrentIterationSymbol = newSymbol
-}
-
-func (itr *iterator) GetCurrentIterationSymbol() string {
-	return itr.renderObject.CurrentIterationSymbol
+	itr.RenderObject.CurrentIterationSymbol = newSymbol
 }
 
 func (itr *iterator) SetRemainingIterationSymbol(newSymbol string) {
-	itr.renderObject.RemainingIterationSymbol = newSymbol
-}
-
-func (itr *iterator) GetRemainingIterationSymbol() string {
-	return itr.renderObject.RemainingIterationSymbol
+	itr.RenderObject.RemainingIterationSymbol = newSymbol
 }
 
 func (itr *iterator) SetLParen(newSymbol string) {
-	itr.renderObject.LParen = newSymbol
-}
-
-func (itr *iterator) GetLParen() string {
-	return itr.renderObject.LParen
+	itr.RenderObject.LParen = newSymbol
 }
 
 func (itr *iterator) SetRParen(newSymbol string) {
-	itr.renderObject.RParen = newSymbol
+	itr.RenderObject.RParen = newSymbol
 }
 
-func (itr *iterator) GetRParen() string {
-	return itr.renderObject.RParen
+func (itr *iterator) progress() error {
+	itr.Current += itr.Step
+	if itr.Current > itr.Stop {
+		return errors.New("Stop Iteration error")
+	}
+
+	return nil
 }
 
 func convertToFloatValue(value interface{}) float64 {
 	floatValue := reflect.Indirect(reflect.ValueOf(value)).Convert(reflect.TypeOf(*new(float64))).Float()
 
 	return floatValue
-}
-
-func (itr *iterator) progress() error {
-	itr.current += itr.step
-	if itr.current > itr.stop {
-		return errors.New("Stop Iteration error")
-	}
-
-	return nil
 }
 
 func isObject(values ...interface{}) (bool, error) {
@@ -182,7 +155,7 @@ func isObject(values ...interface{}) (bool, error) {
 			}
 			isObject = true
 		} else {
-			err = errors.New(fmt.Sprintf("Type: %v is not as number or valid object!", reflect.TypeOf(v)))
+			err = fmt.Errorf("Type: %v is not as number or valid object!", reflect.TypeOf(v))
 			break
 		}
 	}
@@ -196,14 +169,14 @@ func checkValues(isObject bool, values ...interface{}) error {
 	}
 
 	if !isObject && (len(values) < 1 || len(values) > 3) {
-		return errors.New("Expect 1, 2 or 3 parameters (stop); (start, stop) or (start, stop, step)")
+		return errors.New("Expect 1, 2 or 3 parameters (Stop); (Start, Stop) or (Start, Stop, Step)")
 	}
 
 	if !isObject && len(values) > 1 && convertToFloatValue(values[0]) > convertToFloatValue(values[1]) {
-		return errors.New(
-			fmt.Sprintf("Start value (%v) is greater than stop value (%v)!",
-				convertToFloatValue(values[0]),
-				convertToFloatValue(values[1])))
+		return fmt.Errorf("Start value (%v) is greater than Stop value (%v)!",
+			convertToFloatValue(values[0]),
+			convertToFloatValue(values[1]),
+		)
 	}
 
 	return nil
@@ -227,18 +200,18 @@ func isValidObject(v interface{}) bool {
 
 func createIteratorFromObject(object interface{}) *iterator {
 	itr := new(iterator)
-	itr.start = 0.0
-	itr.stop = float64(reflect.ValueOf(object).Len())
-	itr.step = 1.0
-	itr.current = 0.0
-	itr.renderObject = render.MakeRenderObject(itr.start, itr.stop, itr.step)
+	itr.Start = 0.0
+	itr.Stop = float64(reflect.ValueOf(object).Len())
+	itr.Step = 1.0
+	itr.Current = 0.0
+	itr.RenderObject = render.MakeRenderObject(itr.Start, itr.Stop, itr.Step)
 
 	return itr
 }
 
 func createIteratorFromValues(values ...interface{}) *iterator {
 	itr := new(iterator)
-	itr.step = 1.0
+	itr.Step = 1.0
 	floatValues := make([]float64, 0)
 
 	for _, value := range values {
@@ -247,17 +220,18 @@ func createIteratorFromValues(values ...interface{}) *iterator {
 
 	switch len(floatValues) {
 	case 1:
-		itr.stop = floatValues[0]
+		itr.Stop = floatValues[0]
 	case 2:
-		itr.start = floatValues[0]
-		itr.stop = floatValues[1]
+		itr.Start = floatValues[0]
+		itr.Stop = floatValues[1]
 	case 3:
-		itr.start = floatValues[0]
-		itr.stop = floatValues[1]
-		itr.step = floatValues[2]
+		itr.Start = floatValues[0]
+		itr.Stop = floatValues[1]
+		itr.Step = floatValues[2]
 	}
 
-	itr.renderObject = render.MakeRenderObject(itr.start, itr.stop, itr.step)
+	itr.Current = itr.Start
+	itr.RenderObject = render.MakeRenderObject(itr.Start, itr.Stop, itr.Step)
 
 	return itr
 }
