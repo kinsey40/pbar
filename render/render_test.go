@@ -38,6 +38,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/mock/gomock"
+	"github.com/kinsey40/pbar/mocks"
 	"github.com/kinsey40/pbar/render"
 	"github.com/stretchr/testify/assert"
 )
@@ -139,27 +141,54 @@ func TestMakeRenderObject(t *testing.T) {
 }
 
 func TestUpdate(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	mockClock := mocks.NewMockClock(mockCtrl)
 	testCases := []struct {
 		startVal        float64
 		stopVal         float64
 		stepVal         float64
 		currentVal      float64
-		startUnixSecs   int64
-		currentUnixSecs int64
+		elapsed         string
+		remaining       string
+		formatElapsed   string
+		formatRemaining string
 		buffer          *bytes.Buffer
 		expectError     bool
 		expectedOutput  string
 	}{
-		{0.0, 5.0, 1.0, 5.0, 5.0, 10.0, new(bytes.Buffer), false, "\r |##########| 5.0/5.0 100.0% [elapsed: 00m:05s, left: 00m:00s, 1.00 iters/sec]\n"},
-		{0.0, 5.0, 1.0, 1.0, 5.0, 10.0, new(bytes.Buffer), false, "\r |##--------| 1.0/5.0 20.0% [elapsed: 00m:05s, left: 00m:20s, 0.20 iters/sec]"},
+		{0.0, 5.0, 1.0, 5.0, "5s", "0s", "00m:05s", "00m:00s", new(bytes.Buffer), false, "\r |##########| 5.0/5.0 100.0% [elapsed: 00m:05s, left: 00m:00s, 1.00 iters/sec]\n"},
+		{0.0, 5.0, 1.0, 1.0, "5s", "20s", "00m:05s", "00m:20s", new(bytes.Buffer), false, "\r |##--------| 1.0/5.0 20.0% [elapsed: 00m:05s, left: 00m:20s, 0.20 iters/sec]"},
+		{1.0, 5.0, 1.0, 0.0, "", "", "", "", new(bytes.Buffer), true, ""},
 	}
 
 	for _, testCase := range testCases {
 		r := render.MakeRenderObject(testCase.startVal, testCase.stopVal, testCase.stepVal)
 		r.W = testCase.buffer
-		r.Initialize(time.Unix(testCase.startUnixSecs, 0.0))
+		r.Initialize(mockClock)
 
-		err := r.Update(testCase.currentVal, time.Unix(testCase.currentUnixSecs, 0.0))
+		if testCase.elapsed != "" && testCase.remaining != "" {
+			elapsedDur, err := time.ParseDuration(testCase.elapsed)
+			if err != nil {
+				t.Errorf("Error raised in parsing elapsed: %v", elapsedDur)
+			}
+
+			remainingDur, err := time.ParseDuration(testCase.remaining)
+			if err != nil {
+				t.Errorf("Error raised in parsing remaining: %v", remainingDur)
+			}
+
+			gomock.InOrder(
+				mockClock.EXPECT().Now(),
+				mockClock.EXPECT().Subtract(gomock.Any()).Return(elapsedDur),
+				mockClock.EXPECT().Remaining(gomock.Any()).Return(remainingDur),
+				mockClock.EXPECT().Format(gomock.Any()).Return(testCase.formatElapsed),
+				mockClock.EXPECT().Format(gomock.Any()).Return(testCase.formatRemaining),
+			)
+		}
+
+		err := r.Update(testCase.currentVal)
 		got := testCase.buffer.String()
 
 		if testCase.expectError {
@@ -178,25 +207,27 @@ func TestUpdate(t *testing.T) {
 }
 
 func TestInitialize(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	mockClock := mocks.NewMockClock(mockCtrl)
 	testCases := []struct {
-		startVal      float64
-		endVal        float64
-		stepVal       float64
-		startUnixSecs int64
+		startVal float64
+		endVal   float64
+		stepVal  float64
 	}{
-		{0.0, 5.0, 1.0, 10},
+		{0.0, 5.0, 1.0},
 	}
 
 	for _, testCase := range testCases {
 		r := render.MakeRenderObject(testCase.startVal, testCase.endVal, testCase.stepVal)
-		startTime := time.Unix(testCase.startUnixSecs, 0)
-		r.Initialize(startTime)
-		message := fmt.Sprintf(
-			"Times not equal expected: %v; got %v",
-			startTime,
-			r.StartTime,
-		)
+		r.Initialize(mockClock)
 
-		assert.Equal(t, startTime, r.StartTime, message)
+		message := fmt.Sprintf(
+			"Clocks not equal expected: %v; got %v",
+			mockClock,
+			r.Clock,
+		)
+		assert.Equal(t, mockClock, r.Clock, message)
 	}
 }

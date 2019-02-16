@@ -33,12 +33,53 @@
 package pbar_test
 
 import (
+	"bytes"
 	"fmt"
 	"testing"
+	"time"
 
+	"github.com/golang/mock/gomock"
 	"github.com/kinsey40/pbar"
+	"github.com/kinsey40/pbar/mocks"
+	"github.com/kinsey40/pbar/render"
 	"github.com/stretchr/testify/assert"
 )
+
+// var fakeStartTime = time.Date(2018, time.November, 3, 3, 3, 3, 3, time.FixedZone("Europe/London", 0))
+// var fakeTimeNow = time.Date(2018, time.November, 5, 5, 5, 5, 5, time.FixedZone("Europe/London", 0))
+
+// type mockClockI interface {
+// 	Now() time.Time
+// 	Subtract() time.Duration
+// 	SetStart(time.Time)
+// 	Start() time.Time
+// 	Seconds(time.Duration) float64
+// 	Remaining(float64) time.Duration
+// 	Format(time.Duration) string
+// }
+
+// type mockClock struct {
+// 	StartTime time.Time
+// }
+
+// func (c *mockClock) Now() time.Time {
+// 	return fakeTimeNow
+// }
+
+// func (c *mockClock) Subtract() time.Duration {
+// 	return c.StartTime.Sub(c.Now())
+// }
+
+// func (c *mockClock) Start() time.Time {
+// 	return fakeStartTime
+// }
+
+// func newMockClock() mockClockI {
+// 	c := new(mockClock)
+// 	c.StartTime = fakeStartTime
+
+// 	return c
+// }
 
 func TestMakeIteratorObject(t *testing.T) {
 	itr := pbar.MakeIteratorObject()
@@ -51,35 +92,130 @@ func TestMakeIteratorObject(t *testing.T) {
 }
 
 func TestInitialize(t *testing.T) {
-	// Requires mocking of the time module
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	mockClock := mocks.NewMockClock(mockCtrl)
+	itr := pbar.MakeIteratorObject()
+	itr.Timer = mockClock
+
+	testCases := []struct {
+		startVal           float64
+		stopVal            float64
+		stepVal            float64
+		currentVal         float64
+		expectedCurrentVal float64
+		currentTime        time.Time
+		buffer             *bytes.Buffer
+		expectError        bool
+	}{
+		{0.0, 5.0, 1.0, 0.0, 1.0, time.Unix(10, 0), new(bytes.Buffer), false},
+		{1.0, 5.0, 1.0, 0.0, 1.0, time.Unix(10, 0), new(bytes.Buffer), true},
+	}
+
+	for _, testCase := range testCases {
+		gomock.InOrder(
+			mockClock.EXPECT().Now().Return(testCase.currentTime),
+			mockClock.EXPECT().SetStart(testCase.currentTime),
+		)
+
+		itr.Start = testCase.startVal
+		itr.Stop = testCase.stopVal
+		itr.Step = testCase.stepVal
+		itr.Current = testCase.currentVal
+		itr.RenderObject = render.MakeRenderObject(testCase.startVal, testCase.stopVal, testCase.stepVal)
+		itr.RenderObject.W = testCase.buffer
+		itr.Timer = mockClock
+
+		err := itr.Initialize()
+
+		assert.Equal(t, itr.RenderObject.Clock, mockClock, fmt.Sprintf("Iterator clock and render clock not equal!"))
+		if testCase.expectError {
+			assert.Error(t, err, fmt.Sprintf("Unexpected error raised: %v", err))
+		} else {
+			assert.NoError(t, err, fmt.Sprintf("Expected Error not raised"))
+			assert.Equal(t,
+				testCase.expectedCurrentVal,
+				itr.Current,
+				fmt.Sprintf("Itr current value expected: %v; got: %v", testCase.expectedCurrentVal, itr.Current))
+		}
+	}
 }
 
-// func TestUpdate(t *testing.T) {
-// 	Requires mocking of the time module
-// 	testCases := []struct {
-// 		startVal             float64
-// 		stopVal              float64
-// 		stepVal              float64
-// 		currentVal           float64
-// 		buffer               *bytes.Buffer
-// 		expectedOutput       string
-// 		expectedCurrentValue float64
-// 	}{
-// 		{0.0, 5.0, 1.0, 1.0, new(bytes.Buffer), "", 2.0},
-// 	}
+func TestUpdate(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
 
-// 	for _, testCase := range testCases {
-// 		r := render.MakeRenderObject(testCase.startVal, testCase.stopVal, testCase.stepVal)
-// 		r.W = testCase.buffer
-// 		r.Initialize(time.Now())
-// 		r.Update(testCase.currentVal)
+	mockClock := mocks.NewMockClock(mockCtrl)
+	itr := pbar.MakeIteratorObject()
+	itr.Timer = mockClock
 
-// 		got := testCase.buffer.String()
+	testCases := []struct {
+		startVal        float64
+		stopVal         float64
+		stepVal         float64
+		currentVal      float64
+		buffer          *bytes.Buffer
+		elapsed         string
+		remaining       string
+		formatElapsed   string
+		formatRemaining string
+		expectError     bool
+		expectedOutput  string
+	}{
+		{0.0, 5.0, 1.0, 0.0, new(bytes.Buffer), "2s", "5s", "00m:02s", "00m:05s", false, "\r |----------| 0.0/5.0 0.0% [elapsed: 00m:00s, left: N/A, N/A iters/sec]"},
+		{0.0, 5.0, 1.0, 1.0, new(bytes.Buffer), "2s", "5s", "00m:02s", "00m:05s", false, "\r |##--------| 1.0/5.0 20.0% [elapsed: 00m:02s, left: 00m:05s, 0.50 iters/sec]"},
+		{0.0, 5.0, 1.0, 5.0, new(bytes.Buffer), "4s", "1s", "00m:04s", "00m:01s", true, "\r |##########| 5.0/5.0 100.0% [elapsed: 00m:04s, left: 00m:01s, 1.25 iters/sec]\n"},
+		{1.0, 5.0, 1.0, 0.0, new(bytes.Buffer), "1s", "1s", "00m:01s", "00m:01s", true, ""},
+		{1.0, 5.0, 1.0, 6.0, new(bytes.Buffer), "1s", "1s", "00m:01s", "00m:01s", true, ""},
+	}
 
-// 		assert.Equal(t, testCase.expectedOutput, got, fmt.Sprintf(""))
-// 		assert.Equal(t, testCase.expectedCurrentValue, r.CurrentValue, fmt.Sprintf(""))
-// 	}
-// }
+	for _, testCase := range testCases {
+		itr.Start = testCase.startVal
+		itr.Stop = testCase.stopVal
+		itr.Step = testCase.stepVal
+		itr.Current = testCase.currentVal
+		itr.RenderObject = render.MakeRenderObject(testCase.startVal, testCase.stopVal, testCase.stepVal)
+		itr.RenderObject.Clock = mockClock
+		itr.RenderObject.W = testCase.buffer
+
+		if testCase.elapsed != "" && testCase.remaining != "" {
+			elapsedDur, err := time.ParseDuration(testCase.elapsed)
+			if err != nil {
+				t.Errorf("Error raised in parsing elapsed: %v", elapsedDur)
+			}
+
+			remainingDur, err := time.ParseDuration(testCase.remaining)
+			if err != nil {
+				t.Errorf("Error raised in parsing remaining: %v", remainingDur)
+			}
+
+			if testCase.currentVal > testCase.startVal && testCase.currentVal <= testCase.stopVal {
+				gomock.InOrder(
+					mockClock.EXPECT().Now(),
+					mockClock.EXPECT().Subtract(gomock.Any()).Return(elapsedDur),
+					mockClock.EXPECT().Remaining(gomock.Any()).Return(remainingDur),
+					mockClock.EXPECT().Format(gomock.Any()).Return(testCase.formatElapsed),
+					mockClock.EXPECT().Format(gomock.Any()).Return(testCase.formatRemaining),
+				)
+			}
+		}
+
+		err := itr.Update()
+		got := testCase.buffer.String()
+
+		assert.Equal(t,
+			testCase.expectedOutput,
+			got,
+			fmt.Sprintf("Output string incorrect expected: %v; got: %v", testCase.expectedOutput, got))
+
+		if testCase.expectError {
+			assert.Error(t, err, fmt.Sprintf("Unexpected error raised: %v", err))
+		} else {
+			assert.NoError(t, err, fmt.Sprintf("Expected Error not raised"))
+		}
+	}
+}
 
 func TestPbar(t *testing.T) {
 	testCases := []struct {

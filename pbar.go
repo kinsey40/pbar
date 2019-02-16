@@ -38,8 +38,8 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
-	"time"
 
+	"github.com/kinsey40/pbar/clock"
 	"github.com/kinsey40/pbar/render"
 )
 
@@ -48,6 +48,7 @@ type iterator struct {
 	Stop         float64
 	Step         float64
 	Current      float64
+	Timer        clock.Clock
 	RenderObject *render.RenderObject
 }
 
@@ -80,7 +81,8 @@ func Pbar(values ...interface{}) (*iterator, error) {
 }
 
 func (itr *iterator) Initialize() error {
-	itr.RenderObject.Initialize(time.Now())
+	itr.Timer.SetStart(itr.Timer.Now())
+	itr.RenderObject.Initialize(itr.Timer)
 	if err := itr.Update(); err != nil {
 		return err
 	}
@@ -90,7 +92,7 @@ func (itr *iterator) Initialize() error {
 
 func (itr *iterator) Update() error {
 	var err error
-	if err = itr.RenderObject.Update(itr.Current, time.Now()); err != nil {
+	if err = itr.RenderObject.Update(itr.Current); err != nil {
 		return err
 	}
 
@@ -205,6 +207,7 @@ func createIteratorFromObject(object interface{}) *iterator {
 	itr.Step = 1.0
 	itr.Current = 0.0
 	itr.RenderObject = render.MakeRenderObject(itr.Start, itr.Stop, itr.Step)
+	itr.Timer = clock.NewClock()
 
 	return itr
 }
@@ -232,6 +235,7 @@ func createIteratorFromValues(values ...interface{}) *iterator {
 
 	itr.Current = itr.Start
 	itr.RenderObject = render.MakeRenderObject(itr.Start, itr.Stop, itr.Step)
+	itr.Timer = clock.NewClock()
 
 	return itr
 }

@@ -38,6 +38,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/mock/gomock"
+	"github.com/kinsey40/pbar/mocks"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -78,14 +80,20 @@ func TestRender(t *testing.T) {
 }
 
 func TestFormatProgressBar(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	mockClock := mocks.NewMockClock(mockCtrl)
 	testCases := []struct {
 		startVal        float64
 		currentVal      float64
 		endVal          float64
 		stepVal         float64
 		description     string
-		startUnixSecs   int64
-		currentUnixSecs int64
+		elapsed         string
+		remaining       string
+		formatElapsed   string
+		formatRemaining string
 		lineSize        int
 		lParen          string
 		rParen          string
@@ -94,14 +102,35 @@ func TestFormatProgressBar(t *testing.T) {
 		curIterSymbol   string
 		expectedOutput  string
 	}{
-		{0.0, 1.0, 5.0, 1.0, "", 5, 10, 10, "|", "|", "-", "#", "#", " |##--------| 1.0/5.0 20.0% [elapsed: 00m:05s, left: 00m:20s, 0.20 iters/sec]"},
+		{0.0, 1.0, 5.0, 1.0, "", "5s", "20s", "00m:05s", "00m:20s", 10, "|", "|", "-", "#", "#", " |##--------| 1.0/5.0 20.0% [elapsed: 00m:05s, left: 00m:20s, 0.20 iters/sec]"},
 	}
 
 	for _, testCase := range testCases {
 		r := MakeRenderObject(testCase.startVal, testCase.endVal, testCase.stepVal)
+		r.Initialize(mockClock)
 		r.CurrentValue = testCase.currentVal
-		r.StartTime = time.Unix(testCase.startUnixSecs, 0)
-		pbar := r.formatProgressBar(time.Unix(testCase.currentUnixSecs, 0))
+
+		if testCase.elapsed != "" && testCase.remaining != "" {
+			elapsedDur, err := time.ParseDuration(testCase.elapsed)
+			if err != nil {
+				t.Errorf("Error raised in parsing elapsed: %v", elapsedDur)
+			}
+
+			remainingDur, err := time.ParseDuration(testCase.remaining)
+			if err != nil {
+				t.Errorf("Error raised in parsing remaining: %v", remainingDur)
+			}
+
+			gomock.InOrder(
+				mockClock.EXPECT().Now(),
+				mockClock.EXPECT().Subtract(gomock.Any()).Return(elapsedDur),
+				mockClock.EXPECT().Remaining(gomock.Any()).Return(remainingDur),
+				mockClock.EXPECT().Format(gomock.Any()).Return(testCase.formatElapsed),
+				mockClock.EXPECT().Format(gomock.Any()).Return(testCase.formatRemaining),
+			)
+		}
+
+		pbar := r.formatProgressBar()
 		message := fmt.Sprintf(
 			"Progress bar incorrect, expected: %s; got %s",
 			testCase.expectedOutput,
@@ -113,25 +142,51 @@ func TestFormatProgressBar(t *testing.T) {
 }
 
 func TestGetSpeedMeter(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	mockClock := mocks.NewMockClock(mockCtrl)
 	testCases := []struct {
 		startVal        float64
 		currentVal      float64
 		endVal          float64
 		stepVal         float64
-		startUnixSecs   int64
-		currentUnixSecs int64
+		elapsed         string
+		remaining       string
+		formatElapsed   string
+		formatRemaining string
 		expectedOutput  string
 	}{
-		{0.0, 0.0, 5.0, 1.0, 5, 10, "[elapsed: 00m:00s, left: N/A, N/A iters/sec]"},
-		{0.0, 1.0, 5.0, 1.0, 5, 10, "[elapsed: 00m:05s, left: 00m:20s, 0.20 iters/sec]"},
+		{0.0, 0.0, 5.0, 1.0, "", "", "00m:00s", "00m:05s", "[elapsed: 00m:00s, left: N/A, N/A iters/sec]"},
+		{0.0, 1.0, 5.0, 1.0, "5s", "20s", "00m:05s", "00m:20s", "[elapsed: 00m:05s, left: 00m:20s, 0.20 iters/sec]"},
 	}
 
 	for _, testCase := range testCases {
 		r := MakeRenderObject(testCase.startVal, testCase.endVal, testCase.stepVal)
 		r.CurrentValue = testCase.currentVal
-		r.StartTime = time.Unix(testCase.startUnixSecs, 0)
-		speedMeter := r.getSpeedMeter(time.Unix(testCase.currentUnixSecs, 0))
+		r.Initialize(mockClock)
 
+		if testCase.elapsed != "" && testCase.remaining != "" {
+			elapsedDur, err := time.ParseDuration(testCase.elapsed)
+			if err != nil {
+				t.Errorf("Error raised in parsing elapsed: %v", elapsedDur)
+			}
+
+			remainingDur, err := time.ParseDuration(testCase.remaining)
+			if err != nil {
+				t.Errorf("Error raised in parsing remaining: %v", remainingDur)
+			}
+
+			gomock.InOrder(
+				mockClock.EXPECT().Now(),
+				mockClock.EXPECT().Subtract(gomock.Any()).Return(elapsedDur),
+				mockClock.EXPECT().Remaining(gomock.Any()).Return(remainingDur),
+				mockClock.EXPECT().Format(gomock.Any()).Return(testCase.formatElapsed),
+				mockClock.EXPECT().Format(gomock.Any()).Return(testCase.formatRemaining),
+			)
+		}
+
+		speedMeter := r.getSpeedMeter()
 		message := fmt.Sprintf(
 			"Speed Meter incorrect expected: %s; got: %s",
 			testCase.expectedOutput,
@@ -201,21 +256,5 @@ func TestGetStatistics(t *testing.T) {
 			testCase.expectedNumStepsCompleted,
 			numSteps,
 			fmt.Sprintf("Num steps complete not equal, expected: %d; got: %d", testCase.expectedNumStepsCompleted, numSteps))
-	}
-}
-
-func TestFormatTime(t *testing.T) {
-	testCases := []struct {
-		timeValue      time.Duration
-		expectedString string
-	}{
-		{time.Duration(10) * time.Second, "00m:10s"},
-		{time.Duration(10000) * time.Second, "02h:46m:40s"},
-	}
-
-	for _, testCase := range testCases {
-		returnedString := formatTime(testCase.timeValue)
-		message := fmt.Sprintf("Time string incorrect, expected: %v; got: %v", testCase.expectedString, returnedString)
-		assert.Equal(t, testCase.expectedString, returnedString, message)
 	}
 }

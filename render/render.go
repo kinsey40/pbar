@@ -39,7 +39,8 @@ import (
 	"math"
 	"os"
 	"strings"
-	"time"
+
+	"github.com/kinsey40/pbar/clock"
 )
 
 var DefaultFinishedIterationSymbol = "#"
@@ -52,11 +53,11 @@ var DefaultLineSize = 10
 
 type RenderObject struct {
 	W                        io.Writer
+	Clock                    clock.Clock
 	StartValue               float64
 	CurrentValue             float64
 	EndValue                 float64
 	StepValue                float64
-	StartTime                time.Time
 	Description              string
 	FinishedIterationSymbol  string
 	CurrentIterationSymbol   string
@@ -85,17 +86,26 @@ func MakeRenderObject(startValue, endValue, stepValue float64) *RenderObject {
 	return renderObj
 }
 
-func (r *RenderObject) Initialize(timeVal time.Time) {
-	r.StartTime = timeVal
+func (r *RenderObject) Initialize(c clock.Clock) {
+	r.Clock = c
 }
 
-func (r *RenderObject) Update(currentValue float64, timeVal time.Time) error {
+func (r *RenderObject) Update(currentValue float64) error {
+	if currentValue < r.StartValue || currentValue > r.EndValue {
+		return fmt.Errorf(
+			"Current value: %f is incorrect. Start: %f; end: %f",
+			currentValue,
+			r.StartValue,
+			r.EndValue)
+	}
+
 	r.CurrentValue = currentValue
-	wholeProgressBar := r.formatProgressBar(timeVal)
+	wholeProgressBar := r.formatProgressBar()
 
 	if currentValue == r.EndValue {
 		wholeProgressBar += "\n"
 	}
+
 	err := r.render(wholeProgressBar)
 
 	return err
@@ -116,7 +126,7 @@ func (r *RenderObject) render(s string) error {
 	return nil
 }
 
-func (r *RenderObject) formatProgressBar(timeVal time.Time) string {
+func (r *RenderObject) formatProgressBar() string {
 	statistics, numStepsCompleted := r.getStatistics()
 	barString := r.getBarString(numStepsCompleted)
 	bar := fmt.Sprintf("%s%s%s",
@@ -124,7 +134,7 @@ func (r *RenderObject) formatProgressBar(timeVal time.Time) string {
 		barString,
 		r.RParen)
 
-	speedMeter := r.getSpeedMeter(timeVal)
+	speedMeter := r.getSpeedMeter()
 	progressBar := strings.Join([]string{r.Description, bar, statistics, speedMeter}, " ")
 
 	return progressBar
@@ -164,15 +174,15 @@ func (r *RenderObject) getBarString(numStepsCompleted int) string {
 	return barString
 }
 
-func (r *RenderObject) getSpeedMeter(timeVal time.Time) string {
+func (r *RenderObject) getSpeedMeter() string {
 	if r.CurrentValue > r.StartValue {
-		elapsed := timeVal.Sub(r.StartTime)
+		elapsed := r.Clock.Subtract(r.Clock.Now())
 		rate := (r.CurrentValue - r.StartValue) / elapsed.Seconds()
-		remainingTime := time.Duration(math.Round((r.EndValue-r.CurrentValue)/rate)) * time.Second
+		remainingTime := r.Clock.Remaining(math.Round((r.EndValue - r.CurrentValue) / rate))
 
 		return fmt.Sprintf("[elapsed: %s, left: %s, %.2f iters/sec]",
-			formatTime(elapsed),
-			formatTime(remainingTime),
+			r.Clock.Format(elapsed),
+			r.Clock.Format(remainingTime),
 			rate,
 		)
 	}
@@ -182,16 +192,4 @@ func (r *RenderObject) getSpeedMeter(timeVal time.Time) string {
 		"N/A",
 		"N/A",
 	)
-}
-
-func formatTime(d time.Duration) string {
-	secs := (d % time.Minute) / time.Second
-	mins := (d % time.Hour) / time.Minute
-	hours := d / time.Hour
-
-	if hours == 0 {
-		return fmt.Sprintf("%02dm:%02ds", mins, secs)
-	}
-
-	return fmt.Sprintf("%02dh:%02dm:%02ds", hours, mins, secs)
 }
