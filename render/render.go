@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  *
- * File:   tqdm.go
+ * File:   render.go
  * Author: kinsey40
  *
  * Created on 13 January 2019, 11:05
@@ -51,6 +51,9 @@ var DefaultRParen = "|"
 var DefaultMaxLineSize = 80
 var DefaultLineSize = 10
 
+// RenderObject is the underlying object which controls the
+// various parameters relating to the rendering of the Pbar
+// object.
 type RenderObject struct {
 	W                        io.Writer
 	Clock                    clock.Clock
@@ -68,6 +71,8 @@ type RenderObject struct {
 	RParen                   string
 }
 
+// MakeRenderObject creates a RenderObject with the initial values set as the
+// default variables.
 func MakeRenderObject(startValue, endValue, stepValue float64) *RenderObject {
 	renderObj := new(RenderObject)
 	renderObj.W = os.Stdout
@@ -86,10 +91,15 @@ func MakeRenderObject(startValue, endValue, stepValue float64) *RenderObject {
 	return renderObj
 }
 
+// Initialize sets the Clock parameter within the RenderObject
+// to a given Clock object.
 func (r *RenderObject) Initialize(c clock.Clock) {
 	r.Clock = c
 }
 
+// Update causes the RenderObject to progress to the next step,
+// returning an error if the currentValue is below the StartValue
+// or above the EndValue.
 func (r *RenderObject) Update(currentValue float64) error {
 	if currentValue < r.StartValue || currentValue > r.EndValue {
 		return fmt.Errorf(
@@ -111,6 +121,7 @@ func (r *RenderObject) Update(currentValue float64) error {
 	return err
 }
 
+// render writes the relevant string to the relevant writer
 func (r *RenderObject) render(s string) error {
 	stringToWrite := fmt.Sprintf("\r%s", s)
 	_, err := io.WriteString(r.W, stringToWrite)
@@ -126,6 +137,9 @@ func (r *RenderObject) render(s string) error {
 	return nil
 }
 
+// formatProgressBar creates the progress bar to be displayed
+// by the writer. It gathers all the relevant sections from
+// the other functions.
 func (r *RenderObject) formatProgressBar() string {
 	statistics, numStepsCompleted := r.getStatistics()
 	barString := r.getBarString(numStepsCompleted)
@@ -140,6 +154,9 @@ func (r *RenderObject) formatProgressBar() string {
 	return progressBar
 }
 
+// getStatistics calculates all the numerical values relating to the
+// progression of the progress bar. These are then formed and returned
+// in a string, alongside the number of steps that have been completed.
 func (r *RenderObject) getStatistics() (string, int) {
 	ratio := r.CurrentValue / r.EndValue
 	percentage := ratio * 100.0
@@ -149,6 +166,7 @@ func (r *RenderObject) getStatistics() (string, int) {
 	return statistics, numStepsCompleted
 }
 
+// getBarString creates the actual 'bar' within the progress bar
 func (r *RenderObject) getBarString(numStepsCompleted int) string {
 	var finString string
 	var currString string
@@ -174,6 +192,9 @@ func (r *RenderObject) getBarString(numStepsCompleted int) string {
 	return barString
 }
 
+// getSpeedMeter forms the part of the progress bar relating
+// to the elapsed and remaining time, as well as the rate of
+// iterations per second.
 func (r *RenderObject) getSpeedMeter() string {
 	if r.CurrentValue > r.StartValue {
 		elapsed := r.Clock.Subtract(r.Clock.Now())

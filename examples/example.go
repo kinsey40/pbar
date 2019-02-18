@@ -1,7 +1,41 @@
+/*
+ * The MIT License
+ *
+ * Copyright 2018 kinsey40.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ *
+ * File:   example.go
+ * Author: kinsey40
+ *
+ * Created on 13 January 2019, 11:05
+ *
+ * This file contains lots of examples for how you use the Pbar package in
+ * a variety of scenarios. The user is encouraged to copy these examples!
+ * Note that this file does not contain functionality present within the Pbar
+ * module and is included for user convience.
+ *
+ */
+
 package main
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/kinsey40/pbar"
@@ -9,48 +43,46 @@ import (
 
 func iterateUsingArray() {
 	x := [5]int{1, 2, 3, 4, 5}
-	t, err := pbar.Pbar(x)
+	p, err := pbar.Pbar(x)
 	if err != nil {
 		panic(err)
 	}
 
-	t.SetDescription("Array")
-	t.Initialize()
+	p.SetDescription("Array")
+	p.Initialize()
 	for range x {
 		time.Sleep(time.Second * 1)
-		t.Update()
+		p.Update()
 	}
 }
 
 func iterateUsingString() {
 	x := "abcde"
-	t, err := pbar.Pbar(x)
+	p, err := pbar.Pbar(x)
 	if err != nil {
 		panic(err)
 	}
 
-	t.SetDescription("String")
-	t.Initialize()
+	p.SetDescription("String")
+	p.Initialize()
 	for range x {
 		time.Sleep(time.Second * 1)
-		t.Update()
+		p.Update()
 	}
 }
 
 func iterateUsingSlice() {
 	x := []int{1, 2, 3, 4, 5}
-	t, err := pbar.Pbar(x)
+	p, err := pbar.Pbar(x)
 	if err != nil {
 		panic(err)
 	}
 
-	t.SetDescription("Slice")
-	t.Initialize()
+	p.SetDescription("Slice")
+	p.Initialize()
 	for range x[:] {
 		time.Sleep(time.Second * 1)
-		if t != nil {
-			t.Update()
-		}
+		p.Update()
 	}
 }
 
@@ -62,78 +94,49 @@ func iterateUsingChannel() {
 	}
 
 	close(x)
-	t, err := pbar.Pbar(x)
+	p, err := pbar.Pbar(x)
 	if err != nil {
 		panic(err)
 	}
 
-	t.SetDescription("Channel")
-	t.Initialize()
+	p.SetDescription("Channel")
+	p.Initialize()
 	for range x {
 		time.Sleep(time.Second * 1)
-		t.Update()
+		p.Update()
 	}
 }
 
 func iterateUsingMap() {
 	x := map[string]string{"1": "a", "2": "b", "3": "c", "4": "d", "5": "e"}
-	t, err := pbar.Pbar(x)
+	p, err := pbar.Pbar(x)
 	if err != nil {
 		panic(err)
 	}
 
-	t.SetDescription("Map")
-	t.Initialize()
+	p.SetDescription("Map")
+	p.Initialize()
 	for range x {
 		time.Sleep(time.Second * 1)
-		t.Update()
+		p.Update()
 	}
 }
 
 func iterateUsingValues() {
-	t, err := pbar.Pbar(10)
+	p, err := pbar.Pbar(10)
 	if err != nil {
 		panic(err)
 	}
 
-	t.SetDescription("Values")
-	t.Initialize()
+	p.SetDescription("Values")
+	p.Initialize()
 	for i := 0; i < 10; i++ {
 		time.Sleep(time.Second * 1)
-		t.Update()
+		p.Update()
 	}
-}
-
-func multipleIterators() {
-	t, err := pbar.Pbar(10)
-	p, err := pbar.Pbar(2)
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	for i := 0; i < 10; i++ {
-		time.Sleep(time.Second * 1)
-		if t != nil {
-			t.Update()
-		}
-
-		// for j := 0; j < 2; i++ {
-		// 	if p != nil {
-		// 		time.Sleep(time.Second * 1)
-		// 		p.Update()
-		// 	}
-		// }
-	}
-
-	time.Sleep(time.Second * 1)
-	p.Update()
-	time.Sleep(time.Second * 1)
-	p.Update()
 }
 
 func main() {
-	// multipleIterators()
-
 	iterateUsingArray()
 	iterateUsingString()
 	iterateUsingMap()
@@ -141,13 +144,3 @@ func main() {
 	iterateUsingSlice()
 	iterateUsingValues()
 }
-
-/* ******
-
-NOTES:
-- Need to finish off the tests, generating the mocks etc.
-- Need method by which to do multiple progress bars
-- potentially look at changing what it writes to
-- Look at using RETAIN as well.
-- Then can release v1.0
-*/

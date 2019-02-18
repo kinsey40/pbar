@@ -43,6 +43,9 @@ import (
 	"github.com/kinsey40/pbar/render"
 )
 
+// iterator object stores the relevant parameters
+// associated with the progress bar, this is returned
+// by the Pbar function.
 type iterator struct {
 	Start        float64
 	Stop         float64
@@ -52,6 +55,7 @@ type iterator struct {
 	RenderObject *render.RenderObject
 }
 
+// Makes an Iterator Object
 func MakeIteratorObject() *iterator {
 	itr := new(iterator)
 	itr.RenderObject = render.MakeRenderObject(itr.Start, itr.Stop, itr.Step)
@@ -59,6 +63,11 @@ func MakeIteratorObject() *iterator {
 	return itr
 }
 
+// Pbar creates a progress bar from the inputted values or object.
+// The user can pass either a valid object or list of numbers
+// (of type: float32, float64, int8, int16, int32, int64 or int).
+// Valid objects should be passed as single values, a valid object
+// ( of type: array, slice, string, map or buffered channel).
 func Pbar(values ...interface{}) (*iterator, error) {
 	itr := MakeIteratorObject()
 	isObject, err := isObject(values...)
@@ -80,6 +89,9 @@ func Pbar(values ...interface{}) (*iterator, error) {
 	return itr, err
 }
 
+// Initialize sets the internal timer to start,
+// enabling output relating to the time taken for
+// iterations within the progress bar.
 func (itr *iterator) Initialize() error {
 	itr.Timer.SetStart(itr.Timer.Now())
 	itr.RenderObject.Initialize(itr.Timer)
@@ -90,6 +102,9 @@ func (itr *iterator) Initialize() error {
 	return nil
 }
 
+// Update moves the iteration forward by one step. This should
+// be performed at the end of the iteration sequence
+// (i.e. at the end of the for-loop).
 func (itr *iterator) Update() error {
 	var err error
 	if err = itr.RenderObject.Update(itr.Current); err != nil {
@@ -100,30 +115,54 @@ func (itr *iterator) Update() error {
 	return err
 }
 
+// SetDescription sets the Description parameter, which causes the Pbar
+// to output a String at the start of the progress bar, effectively
+// enabling the progress bars to be named within the output.
+// Default Value: ""
 func (itr *iterator) SetDescription(descrip string) {
 	itr.RenderObject.Description = descrip + ": "
 }
 
+// SetFinishedIterationSymbol sets the FinishedIterationSymbol, which
+// is the symbol within the progress bar that shows that particular
+// iteration has completed it's execution.
+// Default Value: "#"
 func (itr *iterator) SetFinishedIterationSymbol(newSymbol string) {
 	itr.RenderObject.FinishedIterationSymbol = newSymbol
 }
 
+// SetCurrentIterationSymbol sets the CurrentIterationSymbol, which
+// is the symbol within the progress bar that shows the iteration
+// which is currently being executed.
+// Default Value: "#"
 func (itr *iterator) SetCurrentIterationSymbol(newSymbol string) {
 	itr.RenderObject.CurrentIterationSymbol = newSymbol
 }
 
+// SetRemainingIterationSymbol sets the RemainingIterationSymbol, which
+// is the symbol within the progress bar that shows that particular
+// iteration has not yet completed it's execution.
+// Default Value: "-"
 func (itr *iterator) SetRemainingIterationSymbol(newSymbol string) {
 	itr.RenderObject.RemainingIterationSymbol = newSymbol
 }
 
+// SetLParen sets the symbol to be used to show the start
+// of the progress bar.
+// Default Value: "|"
 func (itr *iterator) SetLParen(newSymbol string) {
 	itr.RenderObject.LParen = newSymbol
 }
 
+// SetRParen sets the symbol to be used to show the end
+// of the progress bar.
+// Default Value: "|"
 func (itr *iterator) SetRParen(newSymbol string) {
 	itr.RenderObject.RParen = newSymbol
 }
 
+// progress moves the iteration sequence forward by altering the
+// CurrentValue inside the iterator object
 func (itr *iterator) progress() error {
 	itr.Current += itr.Step
 	if itr.Current > itr.Stop {
@@ -133,12 +172,18 @@ func (itr *iterator) progress() error {
 	return nil
 }
 
+// convertToFloatValue converts an interface to a float using
+// the reflect package
 func convertToFloatValue(value interface{}) float64 {
 	floatValue := reflect.Indirect(reflect.ValueOf(value)).Convert(reflect.TypeOf(*new(float64))).Float()
 
 	return floatValue
 }
 
+// isObject examines if the interface values are indeed an Object
+// of the correct type. An error is raised if the values are not
+// all of the same type. A seperate error is raised if the value
+// is not a valid object or number.
 func isObject(values ...interface{}) (bool, error) {
 	var isObject bool
 	var err error
@@ -165,6 +210,7 @@ func isObject(values ...interface{}) (bool, error) {
 	return isObject, err
 }
 
+// checkValues checks that the user-passed values are of the correct type.
 func checkValues(isObject bool, values ...interface{}) error {
 	if isObject && len(values) != 1 {
 		return errors.New("Must only pass a single valid object!")
@@ -184,10 +230,15 @@ func checkValues(isObject bool, values ...interface{}) error {
 	return nil
 }
 
+// isConvertibleToFloat checks to see if the interface value can
+// be converted to a float64 value.
 func isConvertibleToFloat(v interface{}) bool {
 	return reflect.TypeOf(v).ConvertibleTo(reflect.TypeOf(*new(float64)))
 }
 
+// isValidObject assesses if the user-passed value is a valid object.
+// Note that a valid object can be a populated object of type:
+// Array, slice, map, Buffered channel or string
 func isValidObject(v interface{}) bool {
 	validObj := true
 	defer func() {
@@ -200,6 +251,8 @@ func isValidObject(v interface{}) bool {
 	return validObj
 }
 
+// createIteratorFromObject creates the iterator object from
+// an object value.
 func createIteratorFromObject(object interface{}) *iterator {
 	itr := new(iterator)
 	itr.Start = 0.0
@@ -212,6 +265,8 @@ func createIteratorFromObject(object interface{}) *iterator {
 	return itr
 }
 
+// createIteratorFromValues creates an iterator object from a list of numerical
+// values.
 func createIteratorFromValues(values ...interface{}) *iterator {
 	itr := new(iterator)
 	itr.Step = 1.0

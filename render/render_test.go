@@ -26,7 +26,7 @@
  *
  * Created on 13 January 2019, 11:05
  *
- * The test file for the render package.
+ * The test file for the render.go
  *
  */
 

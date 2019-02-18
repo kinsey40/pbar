@@ -45,42 +45,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// var fakeStartTime = time.Date(2018, time.November, 3, 3, 3, 3, 3, time.FixedZone("Europe/London", 0))
-// var fakeTimeNow = time.Date(2018, time.November, 5, 5, 5, 5, 5, time.FixedZone("Europe/London", 0))
-
-// type mockClockI interface {
-// 	Now() time.Time
-// 	Subtract() time.Duration
-// 	SetStart(time.Time)
-// 	Start() time.Time
-// 	Seconds(time.Duration) float64
-// 	Remaining(float64) time.Duration
-// 	Format(time.Duration) string
-// }
-
-// type mockClock struct {
-// 	StartTime time.Time
-// }
-
-// func (c *mockClock) Now() time.Time {
-// 	return fakeTimeNow
-// }
-
-// func (c *mockClock) Subtract() time.Duration {
-// 	return c.StartTime.Sub(c.Now())
-// }
-
-// func (c *mockClock) Start() time.Time {
-// 	return fakeStartTime
-// }
-
-// func newMockClock() mockClockI {
-// 	c := new(mockClock)
-// 	c.StartTime = fakeStartTime
-
-// 	return c
-// }
-
 func TestMakeIteratorObject(t *testing.T) {
 	itr := pbar.MakeIteratorObject()
 

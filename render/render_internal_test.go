@@ -21,12 +21,12 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  *
- * File:   render_test.go
+ * File:   render_internal_test.go
  * Author: kinsey40
  *
  * Created on 13 January 2019, 11:05
  *
- * The test file for the render package.
+ * The internal test file for render.go
  *
  */
 
