@@ -35,12 +35,9 @@ package render
 
 import (
 	"fmt"
-	"io"
 	"math"
 	"os"
 	"strings"
-
-	"github.com/kinsey40/pbar/clock"
 )
 
 var DefaultFinishedIterationSymbol = "#"
@@ -55,8 +52,8 @@ var DefaultLineSize = 10
 // various parameters relating to the rendering of the Pbar
 // object.
 type RenderObject struct {
-	W                        io.Writer
-	Clock                    clock.Clock
+	Write                    Write
+	Clock                    Clock
 	StartValue               float64
 	CurrentValue             float64
 	EndValue                 float64
@@ -75,7 +72,7 @@ type RenderObject struct {
 // default variables.
 func MakeRenderObject(startValue, endValue, stepValue float64) *RenderObject {
 	renderObj := new(RenderObject)
-	renderObj.W = os.Stdout
+	renderObj.Write = NewWrite(os.Stdout)
 	renderObj.StartValue = startValue
 	renderObj.CurrentValue = startValue
 	renderObj.StepValue = stepValue
@@ -93,7 +90,7 @@ func MakeRenderObject(startValue, endValue, stepValue float64) *RenderObject {
 
 // Initialize sets the Clock parameter within the RenderObject
 // to a given Clock object.
-func (r *RenderObject) Initialize(c clock.Clock) {
+func (r *RenderObject) Initialize(c Clock) {
 	r.Clock = c
 }
 
@@ -123,15 +120,9 @@ func (r *RenderObject) Update(currentValue float64) error {
 
 // render writes the relevant string to the relevant writer
 func (r *RenderObject) render(s string) error {
-	stringToWrite := fmt.Sprintf("\r%s", s)
-	_, err := io.WriteString(r.W, stringToWrite)
-
+	err := r.Write.WriteString(fmt.Sprintf("\r%s", s))
 	if err != nil {
 		return err
-	}
-
-	if f, ok := r.W.(*os.File); ok {
-		f.Sync()
 	}
 
 	return nil

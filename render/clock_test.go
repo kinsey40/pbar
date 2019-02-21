@@ -30,26 +30,25 @@
  *
  */
 
-package clock_test
+package render_test
 
 import (
 	"fmt"
 	"testing"
 	"time"
 
-	"github.com/kinsey40/pbar/clock"
+	"github.com/kinsey40/pbar/render"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNewClock(t *testing.T) {
-	c := clock.NewClock()
+	c := render.NewClock()
 
-	message := fmt.Sprintf("NewClock type does not match expected: %v; got: %v", (*clock.Clock)(nil), c)
-	assert.Implements(t, (*clock.Clock)(nil), c, message)
+	message := fmt.Sprintf("NewClock type does not match expected: %v; got: %v", (*render.Clock)(nil), c)
+	assert.Implements(t, (*render.Clock)(nil), c, message)
 }
 
 func TestSubtract(t *testing.T) {
-	c := clock.NewClock()
 	testCases := []struct {
 		startTime time.Time
 		inputTime time.Time
@@ -59,8 +58,7 @@ func TestSubtract(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		c.SetStart(testCase.startTime)
-
+		c := &render.ClockVal{StartTime: testCase.startTime}
 		expectedDuration, err := time.ParseDuration(testCase.duration)
 		if err != nil {
 			t.Errorf("Error parsing duration: %v", err)
@@ -74,7 +72,6 @@ func TestSubtract(t *testing.T) {
 }
 
 func TestStart(t *testing.T) {
-	c := clock.NewClock()
 	testCases := []struct {
 		timeVal time.Time
 	}{
@@ -82,14 +79,15 @@ func TestStart(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
+		c := &render.ClockVal{}
 		c.SetStart(testCase.timeVal)
 		message := fmt.Sprintf("Start Time unequal expected: %v; got: %v", testCase.timeVal, c.Start())
+
 		assert.Equal(t, testCase.timeVal, c.Start(), message)
 	}
 }
 
 func TestSeconds(t *testing.T) {
-	c := clock.NewClock()
 	testCases := []struct {
 		input          time.Duration
 		expectedOutput float64
@@ -98,6 +96,7 @@ func TestSeconds(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
+		c := &render.ClockVal{}
 		secs := c.Seconds(testCase.input)
 		message := fmt.Sprintf("Seconds incorrect expected: %v; got: %v", testCase.expectedOutput, secs)
 
@@ -106,7 +105,6 @@ func TestSeconds(t *testing.T) {
 }
 
 func TestRemaining(t *testing.T) {
-	c := clock.NewClock()
 	testCases := []struct {
 		input    float64
 		duration string
@@ -115,6 +113,7 @@ func TestRemaining(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
+		c := &render.ClockVal{}
 		expectedDuration, err := time.ParseDuration(testCase.duration)
 		if err != nil {
 			t.Errorf("Error parsing duration: %v", err)
@@ -128,7 +127,6 @@ func TestRemaining(t *testing.T) {
 }
 
 func TestFormat(t *testing.T) {
-	c := clock.NewClock()
 	testCases := []struct {
 		timeValue      time.Duration
 		expectedString string
@@ -138,6 +136,7 @@ func TestFormat(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
+		c := &render.ClockVal{}
 		returnedString := c.Format(testCase.timeValue)
 		message := fmt.Sprintf("Time string incorrect, expected: %v; got: %v", testCase.expectedString, returnedString)
 		assert.Equal(t, testCase.expectedString, returnedString, message)

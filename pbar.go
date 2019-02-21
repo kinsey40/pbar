@@ -39,25 +39,36 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/kinsey40/pbar/clock"
 	"github.com/kinsey40/pbar/render"
 )
+
+type Iterate interface {
+	Initialize() error
+	Update() error
+	SetDescription(string)
+	SetFinishedIterationSymbol(string)
+	SetCurrentIterationSymbol(string)
+	SetRemainingIterationSymbol(string)
+	SetLParen(string)
+	SetRParen(string)
+	progress() error
+}
 
 // iterator object stores the relevant parameters
 // associated with the progress bar, this is returned
 // by the Pbar function.
-type iterator struct {
+type Iterator struct {
 	Start        float64
 	Stop         float64
 	Step         float64
 	Current      float64
-	Timer        clock.Clock
+	Timer        render.Clock
 	RenderObject *render.RenderObject
 }
 
-// Makes an Iterator Object
-func MakeIteratorObject() *iterator {
-	itr := new(iterator)
+// makeIteratorObject creates an Iterate interface
+func makeIteratorObject() Iterate {
+	itr := new(Iterator)
 	itr.RenderObject = render.MakeRenderObject(itr.Start, itr.Stop, itr.Step)
 
 	return itr
@@ -68,8 +79,8 @@ func MakeIteratorObject() *iterator {
 // (of type: float32, float64, int8, int16, int32, int64 or int).
 // Valid objects should be passed as single values, a valid object
 // ( of type: array, slice, string, map or buffered channel).
-func Pbar(values ...interface{}) (*iterator, error) {
-	itr := MakeIteratorObject()
+func Pbar(values ...interface{}) (Iterate, error) {
+	itr := makeIteratorObject()
 	isObject, err := isObject(values...)
 
 	if err != nil {
@@ -92,7 +103,7 @@ func Pbar(values ...interface{}) (*iterator, error) {
 // Initialize sets the internal timer to start,
 // enabling output relating to the time taken for
 // iterations within the progress bar.
-func (itr *iterator) Initialize() error {
+func (itr *Iterator) Initialize() error {
 	itr.Timer.SetStart(itr.Timer.Now())
 	itr.RenderObject.Initialize(itr.Timer)
 	if err := itr.Update(); err != nil {
@@ -105,7 +116,7 @@ func (itr *iterator) Initialize() error {
 // Update moves the iteration forward by one step. This should
 // be performed at the end of the iteration sequence
 // (i.e. at the end of the for-loop).
-func (itr *iterator) Update() error {
+func (itr *Iterator) Update() error {
 	var err error
 	if err = itr.RenderObject.Update(itr.Current); err != nil {
 		return err
@@ -119,7 +130,7 @@ func (itr *iterator) Update() error {
 // to output a String at the start of the progress bar, effectively
 // enabling the progress bars to be named within the output.
 // Default Value: ""
-func (itr *iterator) SetDescription(descrip string) {
+func (itr *Iterator) SetDescription(descrip string) {
 	itr.RenderObject.Description = descrip + ": "
 }
 
@@ -127,7 +138,7 @@ func (itr *iterator) SetDescription(descrip string) {
 // is the symbol within the progress bar that shows that particular
 // iteration has completed it's execution.
 // Default Value: "#"
-func (itr *iterator) SetFinishedIterationSymbol(newSymbol string) {
+func (itr *Iterator) SetFinishedIterationSymbol(newSymbol string) {
 	itr.RenderObject.FinishedIterationSymbol = newSymbol
 }
 
@@ -135,7 +146,7 @@ func (itr *iterator) SetFinishedIterationSymbol(newSymbol string) {
 // is the symbol within the progress bar that shows the iteration
 // which is currently being executed.
 // Default Value: "#"
-func (itr *iterator) SetCurrentIterationSymbol(newSymbol string) {
+func (itr *Iterator) SetCurrentIterationSymbol(newSymbol string) {
 	itr.RenderObject.CurrentIterationSymbol = newSymbol
 }
 
@@ -143,27 +154,27 @@ func (itr *iterator) SetCurrentIterationSymbol(newSymbol string) {
 // is the symbol within the progress bar that shows that particular
 // iteration has not yet completed it's execution.
 // Default Value: "-"
-func (itr *iterator) SetRemainingIterationSymbol(newSymbol string) {
+func (itr *Iterator) SetRemainingIterationSymbol(newSymbol string) {
 	itr.RenderObject.RemainingIterationSymbol = newSymbol
 }
 
 // SetLParen sets the symbol to be used to show the start
 // of the progress bar.
 // Default Value: "|"
-func (itr *iterator) SetLParen(newSymbol string) {
+func (itr *Iterator) SetLParen(newSymbol string) {
 	itr.RenderObject.LParen = newSymbol
 }
 
 // SetRParen sets the symbol to be used to show the end
 // of the progress bar.
 // Default Value: "|"
-func (itr *iterator) SetRParen(newSymbol string) {
+func (itr *Iterator) SetRParen(newSymbol string) {
 	itr.RenderObject.RParen = newSymbol
 }
 
 // progress moves the iteration sequence forward by altering the
 // CurrentValue inside the iterator object
-func (itr *iterator) progress() error {
+func (itr *Iterator) progress() error {
 	itr.Current += itr.Step
 	if itr.Current > itr.Stop {
 		return errors.New("Stop Iteration error")
@@ -253,22 +264,22 @@ func isValidObject(v interface{}) bool {
 
 // createIteratorFromObject creates the iterator object from
 // an object value.
-func createIteratorFromObject(object interface{}) *iterator {
-	itr := new(iterator)
+func createIteratorFromObject(object interface{}) *Iterator {
+	itr := new(Iterator)
 	itr.Start = 0.0
 	itr.Stop = float64(reflect.ValueOf(object).Len())
 	itr.Step = 1.0
 	itr.Current = 0.0
 	itr.RenderObject = render.MakeRenderObject(itr.Start, itr.Stop, itr.Step)
-	itr.Timer = clock.NewClock()
+	itr.Timer = render.NewClock()
 
 	return itr
 }
 
 // createIteratorFromValues creates an iterator object from a list of numerical
 // values.
-func createIteratorFromValues(values ...interface{}) *iterator {
-	itr := new(iterator)
+func createIteratorFromValues(values ...interface{}) *Iterator {
+	itr := new(Iterator)
 	itr.Step = 1.0
 	floatValues := make([]float64, 0)
 
@@ -290,7 +301,7 @@ func createIteratorFromValues(values ...interface{}) *iterator {
 
 	itr.Current = itr.Start
 	itr.RenderObject = render.MakeRenderObject(itr.Start, itr.Stop, itr.Step)
-	itr.Timer = clock.NewClock()
+	itr.Timer = render.NewClock()
 
 	return itr
 }

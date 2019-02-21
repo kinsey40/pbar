@@ -31,7 +31,7 @@
  *
  */
 
-package clock
+package render
 
 import (
 	"fmt"
@@ -53,53 +53,53 @@ type Clock interface {
 // clock implements a real-time clock by wrapping functions from the
 // time module. It also contains a start time relating to when the
 // Pbar object was initialized.
-type clock struct {
+type ClockVal struct {
 	StartTime time.Time
 }
 
 // NewClock returns an instance of a real-time clock.
 func NewClock() Clock {
-	c := new(clock)
+	c := new(ClockVal)
 
 	return c
 }
 
 // Now returns the current time (from the time module).
-func (c *clock) Now() time.Time {
+func (c *ClockVal) Now() time.Time {
 	return time.Now()
 }
 
 // Subtract finds the difference between a passed in time
 // and the start time.
-func (c *clock) Subtract(now time.Time) time.Duration {
+func (c *ClockVal) Subtract(now time.Time) time.Duration {
 	return now.Sub(c.StartTime)
 }
 
 // SetStart enables the StartTime value to be set in the clock
 // object.
-func (c *clock) SetStart(t time.Time) {
+func (c *ClockVal) SetStart(t time.Time) {
 	c.StartTime = t
 }
 
 // Start returns the StartTime for the clock object
-func (c *clock) Start() time.Time {
+func (c *ClockVal) Start() time.Time {
 	return c.StartTime
 }
 
 // Seconds returns the number of seconds in a time.Duration object
-func (c *clock) Seconds(d time.Duration) float64 {
+func (c *ClockVal) Seconds(d time.Duration) float64 {
 	return d.Seconds()
 }
 
 // Remaining returns a time.Duration object equating to the fraction
 // of progress that has been performed.
-func (c *clock) Remaining(fraction float64) time.Duration {
+func (c *ClockVal) Remaining(fraction float64) time.Duration {
 	return time.Duration(fraction) * time.Second
 }
 
 // Format enables a time.Duration object to be formatted into a string
 // format that can be easily integrated into the progress bar.
-func (c *clock) Format(d time.Duration) string {
+func (c *ClockVal) Format(d time.Duration) string {
 	secs := (d % time.Minute) / time.Second
 	mins := (d % time.Hour) / time.Minute
 	hours := d / time.Hour

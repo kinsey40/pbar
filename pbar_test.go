@@ -45,24 +45,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestMakeIteratorObject(t *testing.T) {
-	itr := pbar.MakeIteratorObject()
-
-	assert.Equal(t, 0.0, itr.Start, "Start value is not 0!")
-	assert.Equal(t, 0.0, itr.Stop, "Stop value is not 0!")
-	assert.Equal(t, 0.0, itr.Step, "Step value is not 0!")
-	assert.Equal(t, 0.0, itr.Current, "Current value is not 0!")
-	assert.NotNil(t, itr.RenderObject, "Render Object is nil!")
-}
-
 func TestInitialize(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
 	mockClock := mocks.NewMockClock(mockCtrl)
-	itr := pbar.MakeIteratorObject()
-	itr.Timer = mockClock
-
 	testCases := []struct {
 		startVal           float64
 		stopVal            float64
@@ -83,21 +70,23 @@ func TestInitialize(t *testing.T) {
 			mockClock.EXPECT().SetStart(testCase.currentTime),
 		)
 
-		itr.Start = testCase.startVal
-		itr.Stop = testCase.stopVal
-		itr.Step = testCase.stepVal
-		itr.Current = testCase.currentVal
-		itr.RenderObject = render.MakeRenderObject(testCase.startVal, testCase.stopVal, testCase.stepVal)
-		itr.RenderObject.W = testCase.buffer
-		itr.Timer = mockClock
+		itr := &pbar.Iterator{
+			Start:        testCase.startVal,
+			Stop:         testCase.stopVal,
+			Step:         testCase.stepVal,
+			Current:      testCase.currentVal,
+			Timer:        mockClock,
+			RenderObject: render.MakeRenderObject(testCase.startVal, testCase.stopVal, testCase.stepVal),
+		}
 
+		itr.RenderObject.Write = render.NewWrite(testCase.buffer)
 		err := itr.Initialize()
 
 		assert.Equal(t, itr.RenderObject.Clock, mockClock, fmt.Sprintf("Iterator clock and render clock not equal!"))
 		if testCase.expectError {
-			assert.Error(t, err, fmt.Sprintf("Unexpected error raised: %v", err))
+			assert.Error(t, err, fmt.Sprintf("Expected Error not raised"))
 		} else {
-			assert.NoError(t, err, fmt.Sprintf("Expected Error not raised"))
+			assert.NoError(t, err, fmt.Sprintf("Unexpected error raised: %v", err))
 			assert.Equal(t,
 				testCase.expectedCurrentVal,
 				itr.Current,
@@ -111,9 +100,6 @@ func TestUpdate(t *testing.T) {
 	defer mockCtrl.Finish()
 
 	mockClock := mocks.NewMockClock(mockCtrl)
-	itr := pbar.MakeIteratorObject()
-	itr.Timer = mockClock
-
 	testCases := []struct {
 		startVal        float64
 		stopVal         float64
@@ -135,13 +121,15 @@ func TestUpdate(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		itr.Start = testCase.startVal
-		itr.Stop = testCase.stopVal
-		itr.Step = testCase.stepVal
-		itr.Current = testCase.currentVal
-		itr.RenderObject = render.MakeRenderObject(testCase.startVal, testCase.stopVal, testCase.stepVal)
+		itr := pbar.Iterator{
+			Start:        testCase.startVal,
+			Stop:         testCase.stopVal,
+			Step:         testCase.stepVal,
+			Current:      testCase.currentVal,
+			RenderObject: render.MakeRenderObject(testCase.startVal, testCase.stopVal, testCase.stepVal),
+		}
 		itr.RenderObject.Clock = mockClock
-		itr.RenderObject.W = testCase.buffer
+		itr.RenderObject.Write = render.NewWrite(testCase.buffer)
 
 		if testCase.elapsed != "" && testCase.remaining != "" {
 			elapsedDur, err := time.ParseDuration(testCase.elapsed)
@@ -211,7 +199,7 @@ func TestPbar(t *testing.T) {
 }
 
 func TestSetDescription(t *testing.T) {
-	itr := pbar.MakeIteratorObject()
+	itr := pbar.Iterator{RenderObject: render.MakeRenderObject(0.0, 0.0, 0.0)}
 	testCases := []struct {
 		desc           string
 		expectedPrefix string
@@ -232,7 +220,7 @@ func TestSetDescription(t *testing.T) {
 }
 
 func TestSetFinishedIterationSymbol(t *testing.T) {
-	itr := pbar.MakeIteratorObject()
+	itr := pbar.Iterator{RenderObject: render.MakeRenderObject(0.0, 0.0, 0.0)}
 	testCases := []struct {
 		symbol string
 	}{
@@ -252,7 +240,7 @@ func TestSetFinishedIterationSymbol(t *testing.T) {
 }
 
 func TestSetCurrentIterationSymbol(t *testing.T) {
-	itr := pbar.MakeIteratorObject()
+	itr := pbar.Iterator{RenderObject: render.MakeRenderObject(0.0, 0.0, 0.0)}
 	testCases := []struct {
 		symbol string
 	}{
@@ -272,7 +260,7 @@ func TestSetCurrentIterationSymbol(t *testing.T) {
 }
 
 func TestSetRemainingIterationSymbol(t *testing.T) {
-	itr := pbar.MakeIteratorObject()
+	itr := pbar.Iterator{RenderObject: render.MakeRenderObject(0.0, 0.0, 0.0)}
 	testCases := []struct {
 		symbol string
 	}{
@@ -292,7 +280,7 @@ func TestSetRemainingIterationSymbol(t *testing.T) {
 }
 
 func TestSetLParenSymbol(t *testing.T) {
-	itr := pbar.MakeIteratorObject()
+	itr := pbar.Iterator{RenderObject: render.MakeRenderObject(0.0, 0.0, 0.0)}
 	testCases := []struct {
 		symbol string
 	}{
@@ -312,7 +300,7 @@ func TestSetLParenSymbol(t *testing.T) {
 }
 
 func TestSetRParenSymbol(t *testing.T) {
-	itr := pbar.MakeIteratorObject()
+	itr := pbar.Iterator{RenderObject: render.MakeRenderObject(0.0, 0.0, 0.0)}
 	testCases := []struct {
 		symbol string
 	}{

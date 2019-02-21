@@ -34,6 +34,7 @@ package render
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -44,6 +45,10 @@ import (
 )
 
 func TestRender(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	mockWriter := mocks.NewMockWrite(mockCtrl)
 	testCases := []struct {
 		startVal       float64
 		endVal         float64
@@ -55,27 +60,31 @@ func TestRender(t *testing.T) {
 		expectError    bool
 	}{
 		{0.0, 5.0, 1.0, 1.0, new(bytes.Buffer), "Hello", "\rHello", false},
+		{0.0, 5.0, 1.0, 1.0, nil, "Hello", "\rHello", true},
 	}
 
 	for _, testCase := range testCases {
 		r := MakeRenderObject(testCase.startVal, testCase.endVal, testCase.stepVal)
-		r.W = testCase.buffer
-		err := r.render(testCase.inputString)
-
-		got := testCase.buffer.String()
 
 		if testCase.expectError {
+			mockWriter.EXPECT().WriteString(gomock.Any()).Return(errors.New("An error"))
+			r.Write = mockWriter
+
+			err := r.render(testCase.inputString)
 			assert.Error(t, err, fmt.Sprintf("Expected error not raised!"))
 		} else {
-			assert.NoError(t, err, fmt.Sprintf("Unexpected error raised: %v", err))
-		}
+			r.Write = NewWrite(testCase.buffer)
+			err := r.render(testCase.inputString)
+			got := testCase.buffer.String()
 
-		assert.Equal(
-			t,
-			testCase.expectedOutput,
-			got,
-			fmt.Sprintf("Outputted string incorrect expected: %s; got %s", testCase.expectedOutput, got),
-		)
+			assert.NoError(t, err, fmt.Sprintf("Unexpected error raised: %v", err))
+			assert.Equal(
+				t,
+				testCase.expectedOutput,
+				got,
+				fmt.Sprintf("Outputted string incorrect expected: %s; got %s", testCase.expectedOutput, got),
+			)
+		}
 	}
 }
 

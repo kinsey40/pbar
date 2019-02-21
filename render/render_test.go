@@ -165,7 +165,7 @@ func TestUpdate(t *testing.T) {
 
 	for _, testCase := range testCases {
 		r := render.MakeRenderObject(testCase.startVal, testCase.stopVal, testCase.stepVal)
-		r.W = testCase.buffer
+		r.Write = render.NewWrite(testCase.buffer)
 		r.Initialize(mockClock)
 
 		if testCase.elapsed != "" && testCase.remaining != "" {
