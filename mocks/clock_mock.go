@@ -128,3 +128,17 @@ func (mr *MockClockMockRecorder) Format(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Format", reflect.TypeOf((*MockClock)(nil).Format), arg0)
 }
+
+// CreateSpeedMeter mocks base method
+func (m *MockClock) CreateSpeedMeter(arg0, arg1, arg2 float64) string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateSpeedMeter", arg0, arg1, arg2)
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// CreateSpeedMeter indicates an expected call of CreateSpeedMeter
+func (mr *MockClockMockRecorder) CreateSpeedMeter(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSpeedMeter", reflect.TypeOf((*MockClock)(nil).CreateSpeedMeter), arg0, arg1, arg2)
+}

@@ -79,7 +79,7 @@ func MakeRenderObject(startValue, stopValue, stepValue float64) Render {
 func (r *RenderObject) Initialize(c Clock, s Settings) {
 	r.Clock = c
 	r.Settings = s
-	r.Write = NewWrite(s.GetWriter())
+	// r.Write = NewWrite(s.GetWriter())
 }
 
 // Update causes the RenderObject to progress to the next step,

@@ -76,7 +76,7 @@ func TestRender(t *testing.T) {
 			err := r.render(testCase.inputString)
 			assert.Error(t, err, fmt.Sprintf("Expected error not raised!"))
 		} else {
-			r.Write = NewWrite(testCase.buffer)
+			// r.Write = NewWrite(testCase.buffer)
 			err := r.render(testCase.inputString)
 			got := testCase.buffer.String()
 
@@ -126,7 +126,7 @@ func TestFormatProgressBar(t *testing.T) {
 			CurrentValue: testCase.currentVal,
 		}
 
-		mockSettings.EXPECT().GetWriter().Return(new(bytes.Buffer))
+		// mockSettings.EXPECT().GetWriter().Return(new(bytes.Buffer))
 		r.Initialize(mockClock, mockSettings)
 
 		if testCase.elapsed != "" && testCase.remaining != "" {
@@ -199,7 +199,7 @@ func TestGetSpeedMeter(t *testing.T) {
 			CurrentValue: testCase.currentVal,
 		}
 
-		mockSettings.EXPECT().GetWriter().Return(new(bytes.Buffer))
+		// mockSettings.EXPECT().GetWriter().Return(new(bytes.Buffer))
 		r.Initialize(mockClock, mockSettings)
 
 		if testCase.elapsed != "" && testCase.remaining != "" {

@@ -142,7 +142,7 @@ func TestUpdate(t *testing.T) {
 			StepValue:  testCase.stepVal,
 			Clock:      mockClock,
 			Settings:   mockSettings,
-			Write:      render.NewWrite(testCase.buffer),
+			// Write:      render.NewWrite(testCase.buffer),
 		}
 
 		if testCase.elapsed != "" && testCase.remaining != "" {
@@ -208,7 +208,7 @@ func TestInitialize(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		mockSettings.EXPECT().GetWriter().Return(render.DefaultWriter)
+		// mockSettings.EXPECT().GetWriter().Return(render.DefaultWriter)
 		r := &render.RenderObject{
 			StartValue: testCase.startVal,
 			StopValue:  testCase.endVal,

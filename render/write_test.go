@@ -35,7 +35,6 @@ package render_test
 import (
 	"bytes"
 	"fmt"
-	"os"
 	"testing"
 
 	"github.com/kinsey40/pbar/render"
@@ -43,7 +42,7 @@ import (
 )
 
 func TestNewWrite(t *testing.T) {
-	w := render.NewWrite(os.Stdout)
+	w := render.NewWrite()
 
 	message := fmt.Sprintf("NewWrite type does not match expected: %v; got: %v", (*render.Write)(nil), w)
 	assert.Implements(t, (*render.Write)(nil), w, message)
@@ -66,4 +65,39 @@ func TestWriteString(t *testing.T) {
 		assert.Equal(t, testCase.str, got, message)
 	}
 
+}
+
+func TestSetWriter(t *testing.T) {
+	testCases := []struct {
+		buffer *bytes.Buffer
+	}{
+		{new(bytes.Buffer)},
+	}
+
+	for _, testCase := range testCases {
+		w := &render.Writing{}
+		w.SetWriter(testCase.buffer)
+		message := fmt.Sprintf("Writer not correct expected: %v; got: %v", testCase.buffer, w.W)
+
+		assert.Equal(t, testCase.buffer, w.W, message)
+	}
+}
+
+func TestGetWriter(t *testing.T) {
+	testCases := []struct {
+		buffer *bytes.Buffer
+	}{
+		{new(bytes.Buffer)},
+	}
+
+	for _, testCase := range testCases {
+		w := &render.Writing{
+			W: testCase.buffer,
+		}
+
+		returned := w.GetWriter()
+		message := fmt.Sprintf("Returned writer incorrect expected: %v; got: %v", testCase.buffer, returned)
+
+		assert.Equal(t, testCase.buffer, returned, message)
+	}
 }

@@ -38,6 +38,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/kinsey40/pbar/render"
 )
@@ -51,26 +52,29 @@ type Iterate interface {
 	SetRemainingIterationSymbol(string)
 	SetLParen(string)
 	SetRParen(string)
+
 	progress() error
+	createIteratorFromObject(interface{})
+	createIteratorFromValues(...interface{})
 }
 
 // iterator object stores the relevant parameters
 // associated with the progress bar, this is returned
 // by the Pbar function.
 type Iterator struct {
-	Start        float64
-	Stop         float64
-	Step         float64
-	Current      float64
-	Timer        render.Clock
-	Settings     render.Settings
-	RenderObject render.Render
+	Values   render.Values
+	Clock    render.Clock
+	Settings render.Settings
+	Write    render.Write
 }
 
 // makeIteratorObject creates an Iterate interface
-func makeIteratorObject() *Iterator {
+func makeIteratorObject() Iterate {
 	itr := new(Iterator)
-	itr.RenderObject = render.MakeRenderObject(itr.Start, itr.Stop, itr.Step)
+	itr.Clock = render.NewClock()
+	itr.Settings = render.NewSettings()
+	itr.Values = render.NewValues()
+	itr.Write = render.NewWrite()
 
 	return itr
 }
@@ -82,9 +86,6 @@ func makeIteratorObject() *Iterator {
 // (of type: array, slice, string, map or buffered channel).
 func Pbar(values ...interface{}) (Iterate, error) {
 	itr := makeIteratorObject()
-	itr.Timer = render.NewClock()
-	itr.Settings = render.NewSettings()
-
 	isObject, err := isObject(values...)
 	if err != nil {
 		return nil, err
@@ -95,9 +96,9 @@ func Pbar(values ...interface{}) (Iterate, error) {
 	}
 
 	if isObject {
-		itr = createIteratorFromObject(values[0])
+		itr.createIteratorFromObject(values[0])
 	} else {
-		itr = createIteratorFromValues(values...)
+		itr.createIteratorFromValues(values...)
 	}
 
 	return itr, err
@@ -107,8 +108,7 @@ func Pbar(values ...interface{}) (Iterate, error) {
 // enabling output relating to the time taken for
 // iterations within the progress bar.
 func (itr *Iterator) Initialize() error {
-	itr.Timer.SetStart(itr.Timer.Now())
-	itr.RenderObject.Initialize(itr.Timer, itr.Settings)
+	itr.Clock.SetStart(itr.Clock.Now())
 	if err := itr.Update(); err != nil {
 		return err
 	}
@@ -120,13 +120,7 @@ func (itr *Iterator) Initialize() error {
 // be performed at the end of the iteration sequence
 // (i.e. at the end of the for-loop).
 func (itr *Iterator) Update() error {
-	var err error
-	if err = itr.RenderObject.Update(itr.Current); err != nil {
-		return err
-	}
-
-	err = itr.progress()
-	return err
+	return itr.progress()
 }
 
 // SetDescription sets the Description parameter, which causes the Pbar
@@ -178,12 +172,93 @@ func (itr *Iterator) SetRParen(newSymbol string) {
 // progress moves the iteration sequence forward by altering the
 // CurrentValue inside the iterator object
 func (itr *Iterator) progress() error {
-	itr.Current += itr.Step
-	if itr.Current > itr.Stop {
+	start := itr.Values.GetStart()
+	stop := itr.Values.GetStop()
+	step := itr.Values.GetStep()
+	current := itr.Values.GetCurrent()
+
+	if current < start || current > stop {
+		return fmt.Errorf("Current: %f is incorrect. Start: %f; end: %f", current, start, stop)
+	}
+
+	if err := itr.render(itr.formatProgressBar()); err != nil {
+		return err
+	}
+
+	newValue := current + step
+	if newValue > stop {
 		return errors.New("Stop Iteration error")
 	}
 
+	itr.Values.SetCurrent(newValue)
+
 	return nil
+}
+
+// render writes the relevant string to the relevant writer
+func (itr *Iterator) render(s string) error {
+	err := itr.Write.WriteString(fmt.Sprintf("\r%s", s))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// formatProgressBar creates the progress bar to be displayed
+// by the writer. It gathers all the relevant sections from
+// the other functions.
+func (itr *Iterator) formatProgressBar() string {
+	start := itr.Values.GetStart()
+	stop := itr.Values.GetStop()
+	current := itr.Values.GetCurrent()
+	lineSize := itr.Settings.GetLineSize()
+
+	statistics, numStepsCompleted := itr.Values.Statistics(lineSize)
+	barString := itr.Settings.CreateBarString(numStepsCompleted)
+	speedMeter := itr.Clock.CreateSpeedMeter(start, stop, current)
+	progressBar := strings.Join([]string{barString, statistics, speedMeter}, " ")
+
+	if current == stop {
+		progressBar += "\n"
+	}
+
+	return progressBar
+}
+
+// createIteratorFromObject creates the iterator object from
+// an object value.
+func (itr *Iterator) createIteratorFromObject(object interface{}) {
+	itr.Values.SetStart(0.0)
+	itr.Values.SetStop(float64(reflect.ValueOf(object).Len()))
+	itr.Values.SetStep(1.0)
+	itr.Values.SetCurrent(0.0)
+}
+
+// createIteratorFromValues creates an iterator object from a list of numerical
+// values.
+func (itr *Iterator) createIteratorFromValues(values ...interface{}) {
+	floatValues := make([]float64, 0)
+
+	for _, value := range values {
+		floatValues = append(floatValues, convertToFloatValue(value))
+	}
+
+	switch len(floatValues) {
+	case 1:
+		itr.Values.SetStop(floatValues[0])
+		itr.Values.SetStep(1.0)
+	case 2:
+		itr.Values.SetStart(floatValues[0])
+		itr.Values.SetCurrent(floatValues[0])
+		itr.Values.SetStop(floatValues[1])
+		itr.Values.SetStep(1.0)
+	case 3:
+		itr.Values.SetStart(floatValues[0])
+		itr.Values.SetCurrent(floatValues[0])
+		itr.Values.SetStop(floatValues[1])
+		itr.Values.SetStep(floatValues[2])
+	}
 }
 
 // convertToFloatValue converts an interface to a float using
@@ -263,46 +338,4 @@ func isValidObject(v interface{}) bool {
 	reflect.ValueOf(v).Len()
 
 	return validObj
-}
-
-// createIteratorFromObject creates the iterator object from
-// an object value.
-func createIteratorFromObject(object interface{}) *Iterator {
-	itr := new(Iterator)
-	itr.Start = 0.0
-	itr.Stop = float64(reflect.ValueOf(object).Len())
-	itr.Step = 1.0
-	itr.Current = 0.0
-	itr.RenderObject = render.MakeRenderObject(itr.Start, itr.Stop, itr.Step)
-
-	return itr
-}
-
-// createIteratorFromValues creates an iterator object from a list of numerical
-// values.
-func createIteratorFromValues(values ...interface{}) *Iterator {
-	itr := new(Iterator)
-	itr.Step = 1.0
-	floatValues := make([]float64, 0)
-
-	for _, value := range values {
-		floatValues = append(floatValues, convertToFloatValue(value))
-	}
-
-	switch len(floatValues) {
-	case 1:
-		itr.Stop = floatValues[0]
-	case 2:
-		itr.Start = floatValues[0]
-		itr.Stop = floatValues[1]
-	case 3:
-		itr.Start = floatValues[0]
-		itr.Stop = floatValues[1]
-		itr.Step = floatValues[2]
-	}
-
-	itr.Current = itr.Start
-	itr.RenderObject = render.MakeRenderObject(itr.Start, itr.Stop, itr.Step)
-
-	return itr
 }

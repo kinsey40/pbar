@@ -6,7 +6,6 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	io "io"
 	reflect "reflect"
 )
 
@@ -129,18 +128,6 @@ func (mr *MockSettingsMockRecorder) SetRParen(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetRParen", reflect.TypeOf((*MockSettings)(nil).SetRParen), arg0)
 }
 
-// SetWriter mocks base method
-func (m *MockSettings) SetWriter(arg0 io.Writer) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetWriter", arg0)
-}
-
-// SetWriter indicates an expected call of SetWriter
-func (mr *MockSettingsMockRecorder) SetWriter(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetWriter", reflect.TypeOf((*MockSettings)(nil).SetWriter), arg0)
-}
-
 // GetDescription mocks base method
 func (m *MockSettings) GetDescription() string {
 	m.ctrl.T.Helper()
@@ -253,16 +240,16 @@ func (mr *MockSettingsMockRecorder) GetRParen() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRParen", reflect.TypeOf((*MockSettings)(nil).GetRParen))
 }
 
-// GetWriter mocks base method
-func (m *MockSettings) GetWriter() io.Writer {
+// CreateBarString mocks base method
+func (m *MockSettings) CreateBarString(arg0 int) string {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetWriter")
-	ret0, _ := ret[0].(io.Writer)
+	ret := m.ctrl.Call(m, "CreateBarString", arg0)
+	ret0, _ := ret[0].(string)
 	return ret0
 }
 
-// GetWriter indicates an expected call of GetWriter
-func (mr *MockSettingsMockRecorder) GetWriter() *gomock.Call {
+// CreateBarString indicates an expected call of CreateBarString
+func (mr *MockSettingsMockRecorder) CreateBarString(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWriter", reflect.TypeOf((*MockSettings)(nil).GetWriter))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateBarString", reflect.TypeOf((*MockSettings)(nil).CreateBarString), arg0)
 }

@@ -33,8 +33,8 @@
 package render
 
 import (
-	"io"
-	"os"
+	"fmt"
+	"strings"
 )
 
 var DefaultDescription = ""
@@ -45,7 +45,6 @@ var DefaultLParen = "|"
 var DefaultRParen = "|"
 var DefaultMaxLineSize = 80
 var DefaultLineSize = 10
-var DefaultWriter = os.Stdout
 
 type Settings interface {
 	SetDescription(string)
@@ -56,7 +55,6 @@ type Settings interface {
 	SetMaxLineSize(int)
 	SetLParen(string)
 	SetRParen(string)
-	SetWriter(io.Writer)
 
 	GetDescription() string
 	GetFinishedIterationSymbol() string
@@ -66,7 +64,8 @@ type Settings interface {
 	GetMaxLineSize() int
 	GetLParen() string
 	GetRParen() string
-	GetWriter() io.Writer
+
+	CreateBarString(int) string
 }
 
 type Set struct {
@@ -78,7 +77,6 @@ type Set struct {
 	MaxLineSize              int
 	LParen                   string
 	RParen                   string
-	Writer                   io.Writer
 }
 
 func NewSettings() Settings {
@@ -91,13 +89,16 @@ func NewSettings() Settings {
 	s.MaxLineSize = DefaultMaxLineSize
 	s.LParen = DefaultLParen
 	s.RParen = DefaultRParen
-	s.Writer = DefaultWriter
 
 	return s
 }
 
 func (s *Set) SetDescription(str string) {
-	s.Description = str
+	if str != DefaultDescription {
+		s.Description = str + ":"
+	} else {
+		s.Description = str
+	}
 }
 
 func (s *Set) SetFinishedIterationSymbol(str string) {
@@ -132,15 +133,7 @@ func (s *Set) SetRParen(str string) {
 	s.RParen = str
 }
 
-func (s *Set) SetWriter(w io.Writer) {
-	s.Writer = w
-}
-
 func (s *Set) GetDescription() string {
-	if s.Description != DefaultDescription {
-		return s.Description + ":"
-	}
-
 	return s.Description
 }
 
@@ -172,6 +165,31 @@ func (s *Set) GetRParen() string {
 	return s.RParen
 }
 
-func (s *Set) GetWriter() io.Writer {
-	return s.Writer
+// getBarString creates the actual 'bar' within the progress bar
+func (s *Set) CreateBarString(numStepsCompleted int) string {
+	var finString string
+	var currString string
+	var remString string
+
+	switch numStepsCompleted {
+	case 0:
+		remString = strings.Repeat(s.RemainingIterationSymbol, s.LineSize)
+	case 1:
+		currString = s.CurrentIterationSymbol
+		remString = strings.Repeat(s.RemainingIterationSymbol, s.LineSize-1)
+	case s.LineSize:
+		finString = strings.Repeat(s.FinishedIterationSymbol, s.LineSize-1)
+		currString = s.CurrentIterationSymbol
+	default:
+		finString = strings.Repeat(s.FinishedIterationSymbol, numStepsCompleted-1)
+		currString = s.CurrentIterationSymbol
+		remString = strings.Repeat(s.RemainingIterationSymbol, s.LineSize-numStepsCompleted)
+	}
+
+	barString := fmt.Sprintf("%s%s%s%s%s", s.LParen, finString, currString, remString, s.RParen)
+	if s.Description != DefaultDescription {
+		barString = strings.Join([]string{s.Description, barString}, " ")
+	}
+
+	return barString
 }

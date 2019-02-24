@@ -6,6 +6,7 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
+	io "io"
 	reflect "reflect"
 )
 
@@ -44,4 +45,30 @@ func (m *MockWrite) WriteString(arg0 string) error {
 func (mr *MockWriteMockRecorder) WriteString(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WriteString", reflect.TypeOf((*MockWrite)(nil).WriteString), arg0)
+}
+
+// SetWriter mocks base method
+func (m *MockWrite) SetWriter(arg0 io.Writer) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetWriter", arg0)
+}
+
+// SetWriter indicates an expected call of SetWriter
+func (mr *MockWriteMockRecorder) SetWriter(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetWriter", reflect.TypeOf((*MockWrite)(nil).SetWriter), arg0)
+}
+
+// GetWriter mocks base method
+func (m *MockWrite) GetWriter() io.Writer {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetWriter")
+	ret0, _ := ret[0].(io.Writer)
+	return ret0
+}
+
+// GetWriter indicates an expected call of GetWriter
+func (mr *MockWriteMockRecorder) GetWriter() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWriter", reflect.TypeOf((*MockWrite)(nil).GetWriter))
 }

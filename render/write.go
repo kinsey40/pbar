@@ -38,9 +38,13 @@ import (
 	"os"
 )
 
+var DefaultWriter = os.Stdout
+
 // Write wraps the WriteString method
 type Write interface {
 	WriteString(string) error
+	SetWriter(io.Writer)
+	GetWriter() io.Writer
 }
 
 // writing is struct holding an io.Writer
@@ -49,11 +53,21 @@ type Writing struct {
 }
 
 // NewWrite creates a new Write interface object
-func NewWrite(writer io.Writer) Write {
+func NewWrite() Write {
 	w := new(Writing)
-	w.W = writer
+	w.W = DefaultWriter
 
 	return w
+}
+
+// SetWriter sets the underlying writer object
+func (w *Writing) SetWriter(writer io.Writer) {
+	w.W = writer
+}
+
+// GetWriter gets the underlying writer object
+func (w *Writing) GetWriter() io.Writer {
+	return w.W
 }
 
 // WriteString writes the given string to the underlying

@@ -35,6 +35,7 @@ package render
 
 import (
 	"fmt"
+	"math"
 	"time"
 )
 
@@ -48,6 +49,8 @@ type Clock interface {
 	Seconds(time.Duration) float64
 	Remaining(float64) time.Duration
 	Format(time.Duration) string
+
+	CreateSpeedMeter(float64, float64, float64) string
 }
 
 // clock implements a real-time clock by wrapping functions from the
@@ -109,4 +112,27 @@ func (c *ClockVal) Format(d time.Duration) string {
 	}
 
 	return fmt.Sprintf("%02dh:%02dm:%02ds", hours, mins, secs)
+}
+
+// CreateSpeedMeter forms the part of the progress bar relating
+// to the elapsed and remaining time, as well as the rate of
+// iterations per second.
+func (c *ClockVal) CreateSpeedMeter(start, stop, current float64) string {
+	if current > start {
+		elapsed := c.Subtract(c.Now())
+		rate := (current - start) / elapsed.Seconds()
+		remainingTime := c.Remaining(math.Round((stop - current) / rate))
+
+		return fmt.Sprintf("[elapsed: %s, left: %s, %.2f iters/sec]",
+			c.Format(elapsed),
+			c.Format(remainingTime),
+			rate,
+		)
+	}
+
+	return fmt.Sprintf("[elapsed: %s, left: %s, %s iters/sec]",
+		"00m:00s",
+		"N/A",
+		"N/A",
+	)
 }

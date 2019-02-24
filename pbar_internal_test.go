@@ -33,21 +33,25 @@
 package pbar
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
 	"testing"
 
+	"github.com/golang/mock/gomock"
+	"github.com/kinsey40/pbar/mocks"
+	"github.com/kinsey40/pbar/render"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestMakeIteratorObject(t *testing.T) {
-	itr := *makeIteratorObject()
+	itr := makeIteratorObject().(*Iterator)
 
-	assert.Zero(t, itr.Start, fmt.Sprintf("Start not zero value: %v", itr.Start))
-	assert.Zero(t, itr.Stop, fmt.Sprintf("Stop not zero value: %v", itr.Start))
-	assert.Zero(t, itr.Step, fmt.Sprintf("Step not zero value: %v", itr.Start))
-	assert.Zero(t, itr.Current, fmt.Sprintf("Current not zero value: %v", itr.Start))
 	assert.NotNil(t, itr, fmt.Sprintf("Iterator is nil!"))
-	assert.NotNil(t, itr.RenderObject, fmt.Sprintf("renderObject is nil"))
+	assert.NotNil(t, itr.Values, fmt.Sprintf("Values is nil"))
+	assert.NotNil(t, itr.Clock, fmt.Sprintf("Clock is nil"))
+	assert.NotNil(t, itr.Settings, fmt.Sprintf("Settings is nil"))
+	assert.NotNil(t, itr.Write, fmt.Sprintf("Write is nil"))
 }
 
 func TestIsConvertibleToFloat(t *testing.T) {
@@ -206,35 +210,48 @@ func TestCheckValues(t *testing.T) {
 	}
 }
 
-func TestProgress(t *testing.T) {
-	testCases := []struct {
-		start            float64
-		stop             float64
-		step             float64
-		current          float64
-		expectedEndValue float64
-		expectedError    bool
-	}{
-		{0.0, 5.0, 1.0, 0.0, 2.0, false},
-		{0.0, 5.0, 1.0, 4.0, 5.0, false},
-		{0.0, 5.0, 1.0, 5.0, 6.0, true},
-	}
+// func TestProgress(t *testing.T) {
+// 	mockCtrl := gomock.NewController(t)
+// 	defer mockCtrl.Finish()
 
-	for _, testCase := range testCases {
-		itr := Iterator{
-			Start:   testCase.start,
-			Stop:    testCase.stop,
-			Step:    testCase.step,
-			Current: testCase.current,
-		}
-		err := itr.progress()
-		if testCase.expectedError {
-			assert.Error(t, err, fmt.Sprintf("Expected error not raised!"))
-		} else {
-			assert.NoError(t, err, fmt.Sprintf("Unexpected error raised!"))
-		}
-	}
-}
+// 	mockValues := mocks.NewMockValues()
+// 	testCases := []struct {
+// 		start
+// 		stop
+// 		step
+// 		current
+// 		expectedEndCurrentValue float64
+// 		expectedError    bool
+// 	}{
+// 		{0.0, 5.0, 1.0, 0.0, 2.0, false},
+// 		{0.0, 5.0, 1.0, 4.0, 5.0, false},
+// 		{0.0, 5.0, 1.0, 5.0, 6.0, true},
+// 	}
+
+// 	for _, testCase := range testCases {
+// 		gomock.InOrder(
+// 			mockValues.EXPECT().GetStart().Return(testCase.start),
+// 			mockValues.EXPECT().GetStop().Return(testCase.stop),
+// 			mockValues.EXPECT().GetStep().Return(testCase.step),
+// 			mockValues.EXPECT().GetCurrent().Return(testCase.current),
+// 		)
+
+// 		itr := new(Iterator)
+// 		itr.Values =
+// 		itr := Iterator{
+// 			Start:   testCase.start,
+// 			Stop:    testCase.stop,
+// 			Step:    testCase.step,
+// 			Current: testCase.current,
+// 		}
+// 		err := itr.progress()
+// 		if testCase.expectedError {
+// 			assert.Error(t, err, fmt.Sprintf("Expected error not raised!"))
+// 		} else {
+// 			assert.NoError(t, err, fmt.Sprintf("Unexpected error raised!"))
+// 		}
+// 	}
+// }
 
 func TestCreateIteratorFromValues(t *testing.T) {
 	testCases := []struct {
@@ -250,40 +267,36 @@ func TestCreateIteratorFromValues(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		obj := createIteratorFromValues(testCase.values...)
-
-		assert.NotNil(
-			t,
-			obj.RenderObject,
-			fmt.Sprintf("The render object is nil!"),
-		)
+		itr := new(Iterator)
+		itr.Values = &render.Vals{}
+		itr.createIteratorFromValues(testCase.values...)
 
 		assert.Equal(
 			t,
 			testCase.expectedStart,
-			obj.Start,
-			fmt.Sprintf("Start Value incorrect expected: %f; got: %f", testCase.expectedStart, obj.Start),
+			itr.Values.GetStart(),
+			fmt.Sprintf("Start Value incorrect expected: %f; got: %f", testCase.expectedStart, itr.Values.GetStart()),
 		)
 
 		assert.Equal(
 			t,
 			testCase.expectedStop,
-			obj.Stop,
-			fmt.Sprintf("Stop Value incorrect expected: %f; got: %f", testCase.expectedStop, obj.Stop),
+			itr.Values.GetStop(),
+			fmt.Sprintf("Stop Value incorrect expected: %f; got: %f", testCase.expectedStop, itr.Values.GetStop()),
 		)
 
 		assert.Equal(
 			t,
 			testCase.expectedStep,
-			obj.Step,
-			fmt.Sprintf("Step Value incorrect expected: %f; got: %f", testCase.expectedStep, obj.Step),
+			itr.Values.GetStep(),
+			fmt.Sprintf("Step Value incorrect expected: %f; got: %f", testCase.expectedStep, itr.Values.GetStep()),
 		)
 
 		assert.Equal(
 			t,
 			testCase.expectedCurrent,
-			obj.Current,
-			fmt.Sprintf("Current Value incorrect expected: %f; got: %f", testCase.expectedCurrent, obj.Current),
+			itr.Values.GetCurrent(),
+			fmt.Sprintf("Current Value incorrect expected: %f; got: %f", testCase.expectedCurrent, itr.Values.GetCurrent()),
 		)
 	}
 }
@@ -300,40 +313,144 @@ func TestCreateIteratorFromObject(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		obj := createIteratorFromObject(testCase.object)
-
-		assert.NotNil(
-			t,
-			obj.RenderObject,
-			fmt.Sprintf("The render object is nil!"),
-		)
+		itr := new(Iterator)
+		itr.Values = &render.Vals{}
+		itr.createIteratorFromObject(testCase.object)
 
 		assert.Equal(
 			t,
 			testCase.expectedStart,
-			obj.Start,
-			fmt.Sprintf("Start Value incorrect expected: %f; got: %f", testCase.expectedStart, obj.Start),
+			itr.Values.GetStart(),
+			fmt.Sprintf("Start Value incorrect expected: %f; got: %f", testCase.expectedStart, itr.Values.GetStart()),
 		)
 
 		assert.Equal(
 			t,
 			testCase.expectedStop,
-			obj.Stop,
-			fmt.Sprintf("Stop Value incorrect expected: %f; got: %f", testCase.expectedStop, obj.Stop),
+			itr.Values.GetStop(),
+			fmt.Sprintf("Stop Value incorrect expected: %f; got: %f", testCase.expectedStop, itr.Values.GetStop()),
 		)
 
 		assert.Equal(
 			t,
 			testCase.expectedStep,
-			obj.Step,
-			fmt.Sprintf("Step Value incorrect expected: %f; got: %f", testCase.expectedStep, obj.Step),
+			itr.Values.GetStep(),
+			fmt.Sprintf("Step Value incorrect expected: %f; got: %f", testCase.expectedStep, itr.Values.GetStep()),
 		)
 
 		assert.Equal(
 			t,
 			testCase.expectedCurrent,
-			obj.Current,
-			fmt.Sprintf("Current Value incorrect expected: %f; got: %f", testCase.expectedCurrent, obj.Current),
+			itr.Values.GetCurrent(),
+			fmt.Sprintf("Current Value incorrect expected: %f; got: %f", testCase.expectedCurrent, itr.Values.GetCurrent()),
 		)
+	}
+}
+
+func TestFormatProgressBar(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	mockClock := mocks.NewMockClock(mockCtrl)
+	mockSettings := mocks.NewMockSettings(mockCtrl)
+	mockValues := mocks.NewMockValues(mockCtrl)
+	testCases := []struct {
+		startVal       float64
+		currentVal     float64
+		endVal         float64
+		lineSize       int
+		numSteps       int
+		barString      string
+		stats          string
+		speedMeter     string
+		expectedOutput string
+	}{
+		{0.0, 1.0, 5.0, 10, 1, "|##--------|", "1.0/5.0 20.0%", "[elapsed: 00m:05s, left: 00m:20s, 0.20 iters/sec]", "|##--------| 1.0/5.0 20.0% [elapsed: 00m:05s, left: 00m:20s, 0.20 iters/sec]"},
+	}
+
+	for _, testCase := range testCases {
+		itr := &Iterator{
+			Values:   mockValues,
+			Settings: mockSettings,
+			Clock:    mockClock,
+		}
+
+		gomock.InOrder(
+			mockValues.EXPECT().GetStart().Return(testCase.startVal),
+			mockValues.EXPECT().GetStop().Return(testCase.endVal),
+			mockValues.EXPECT().GetCurrent().Return(testCase.currentVal),
+			mockSettings.EXPECT().GetLineSize().Return(testCase.lineSize),
+
+			mockValues.EXPECT().Statistics(testCase.lineSize).Return(testCase.stats, testCase.numSteps),
+			mockSettings.EXPECT().CreateBarString(testCase.numSteps).Return(testCase.barString),
+			mockClock.EXPECT().CreateSpeedMeter(testCase.startVal, testCase.endVal, testCase.currentVal).Return(testCase.speedMeter),
+		)
+
+		output := itr.formatProgressBar()
+		message := fmt.Sprintf(
+			"Progress bar incorrect, expected: %s; got %s",
+			testCase.expectedOutput,
+			output,
+		)
+
+		assert.Equal(t, testCase.expectedOutput, output, message)
+	}
+}
+
+func TestRenderError(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	mockWrite := mocks.NewMockWrite(mockCtrl)
+	testCases := []struct {
+		input         string
+		expectedError bool
+	}{
+		{"Hello", false},
+		{"Hello", true},
+	}
+
+	for _, testCase := range testCases {
+		itr := &Iterator{
+			Write: mockWrite,
+		}
+
+		if testCase.expectedError {
+			mockWrite.EXPECT().WriteString(gomock.Any()).Return(errors.New("An error"))
+			err := itr.render(testCase.input)
+			message := fmt.Sprintf("")
+
+			assert.Error(t, err, message)
+		} else {
+			mockWrite.EXPECT().WriteString(gomock.Any()).Return(nil)
+			err := itr.render(testCase.input)
+			message := fmt.Sprintf("")
+
+			assert.NoError(t, err, message)
+		}
+	}
+}
+
+func TestRender(t *testing.T) {
+	testCases := []struct {
+		input          string
+		expectedOutput string
+		buffer         *bytes.Buffer
+	}{
+		{"Hello", "\rHello", new(bytes.Buffer)},
+	}
+
+	for _, testCase := range testCases {
+		w := render.NewWrite()
+		w.SetWriter(testCase.buffer)
+		itr := &Iterator{
+			Write: w,
+		}
+
+		itr.render(testCase.input)
+		got := testCase.buffer.String()
+
+		message := fmt.Sprintf("Input string incorrect expected: %s; got: %s", testCase.expectedOutput, got)
+		assert.Equal(t, testCase.expectedOutput, got, message)
 	}
 }
