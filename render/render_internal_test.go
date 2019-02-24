@@ -64,12 +64,15 @@ func TestRender(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		r := MakeRenderObject(testCase.startVal, testCase.endVal, testCase.stepVal)
+		r := &RenderObject{
+			StartValue: testCase.startVal,
+			StopValue:  testCase.endVal,
+			StepValue:  testCase.stepVal,
+			Write:      mockWriter,
+		}
 
 		if testCase.expectError {
 			mockWriter.EXPECT().WriteString(gomock.Any()).Return(errors.New("An error"))
-			r.Write = mockWriter
-
 			err := r.render(testCase.inputString)
 			assert.Error(t, err, fmt.Sprintf("Expected error not raised!"))
 		} else {
@@ -93,6 +96,7 @@ func TestFormatProgressBar(t *testing.T) {
 	defer mockCtrl.Finish()
 
 	mockClock := mocks.NewMockClock(mockCtrl)
+	mockSettings := mocks.NewMockSettings(mockCtrl)
 	testCases := []struct {
 		startVal        float64
 		currentVal      float64
@@ -115,9 +119,15 @@ func TestFormatProgressBar(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		r := MakeRenderObject(testCase.startVal, testCase.endVal, testCase.stepVal)
-		r.Initialize(mockClock)
-		r.CurrentValue = testCase.currentVal
+		r := &RenderObject{
+			StartValue:   testCase.startVal,
+			StopValue:    testCase.endVal,
+			StepValue:    testCase.stepVal,
+			CurrentValue: testCase.currentVal,
+		}
+
+		mockSettings.EXPECT().GetWriter().Return(new(bytes.Buffer))
+		r.Initialize(mockClock, mockSettings)
 
 		if testCase.elapsed != "" && testCase.remaining != "" {
 			elapsedDur, err := time.ParseDuration(testCase.elapsed)
@@ -131,11 +141,21 @@ func TestFormatProgressBar(t *testing.T) {
 			}
 
 			gomock.InOrder(
+				mockSettings.EXPECT().GetLineSize().Return(DefaultLineSize),
+				mockSettings.EXPECT().GetRemainingIterationSymbol().Return(DefaultRemainingIterationSymbol),
+				mockSettings.EXPECT().GetCurrentIterationSymbol().Return(DefaultCurrentIterationSymbol),
+				mockSettings.EXPECT().GetFinishedIterationSymbol().Return(DefaultFinishedIterationSymbol),
+				mockSettings.EXPECT().GetLineSize().Return(DefaultLineSize),
+				mockSettings.EXPECT().GetLParen().Return(DefaultLParen),
+				mockSettings.EXPECT().GetRParen().Return(DefaultRParen),
+
 				mockClock.EXPECT().Now(),
 				mockClock.EXPECT().Subtract(gomock.Any()).Return(elapsedDur),
 				mockClock.EXPECT().Remaining(gomock.Any()).Return(remainingDur),
 				mockClock.EXPECT().Format(gomock.Any()).Return(testCase.formatElapsed),
 				mockClock.EXPECT().Format(gomock.Any()).Return(testCase.formatRemaining),
+
+				mockSettings.EXPECT().GetDescription().Return(DefaultDescription),
 			)
 		}
 
@@ -155,6 +175,7 @@ func TestGetSpeedMeter(t *testing.T) {
 	defer mockCtrl.Finish()
 
 	mockClock := mocks.NewMockClock(mockCtrl)
+	mockSettings := mocks.NewMockSettings(mockCtrl)
 	testCases := []struct {
 		startVal        float64
 		currentVal      float64
@@ -171,9 +192,15 @@ func TestGetSpeedMeter(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		r := MakeRenderObject(testCase.startVal, testCase.endVal, testCase.stepVal)
-		r.CurrentValue = testCase.currentVal
-		r.Initialize(mockClock)
+		r := &RenderObject{
+			StartValue:   testCase.startVal,
+			StopValue:    testCase.endVal,
+			StepValue:    testCase.stepVal,
+			CurrentValue: testCase.currentVal,
+		}
+
+		mockSettings.EXPECT().GetWriter().Return(new(bytes.Buffer))
+		r.Initialize(mockClock, mockSettings)
 
 		if testCase.elapsed != "" && testCase.remaining != "" {
 			elapsedDur, err := time.ParseDuration(testCase.elapsed)
@@ -207,6 +234,10 @@ func TestGetSpeedMeter(t *testing.T) {
 }
 
 func TestGetBarString(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	mockSettings := mocks.NewMockSettings(mockCtrl)
 	testCases := []struct {
 		numStepsComplete int
 		lineSize         int
@@ -222,14 +253,21 @@ func TestGetBarString(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		r := MakeRenderObject(0.0, 0.0, 0.0)
-		r.LineSize = testCase.lineSize
-		r.FinishedIterationSymbol = testCase.finSymbol
-		r.CurrentIterationSymbol = testCase.currSymbol
-		r.RemainingIterationSymbol = testCase.remSymbol
+		r := &RenderObject{
+			StartValue: 0.0,
+			StopValue:  0.0,
+			StepValue:  0.0,
+			Settings:   mockSettings,
+		}
+
+		gomock.InOrder(
+			mockSettings.EXPECT().GetRemainingIterationSymbol().Return(testCase.remSymbol),
+			mockSettings.EXPECT().GetCurrentIterationSymbol().Return(testCase.currSymbol),
+			mockSettings.EXPECT().GetFinishedIterationSymbol().Return(testCase.finSymbol),
+			mockSettings.EXPECT().GetLineSize().Return(testCase.lineSize),
+		)
 
 		barString := r.getBarString(testCase.numStepsComplete)
-
 		assert.Equal(t,
 			testCase.expectedString,
 			barString,
@@ -238,6 +276,10 @@ func TestGetBarString(t *testing.T) {
 }
 
 func TestGetStatistics(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	mockSettings := mocks.NewMockSettings(mockCtrl)
 	testCases := []struct {
 		start                     float64
 		stop                      float64
@@ -251,12 +293,15 @@ func TestGetStatistics(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		r := MakeRenderObject(testCase.start, testCase.stop, testCase.step)
-		r.CurrentValue = testCase.current
-		r.LineSize = testCase.lineSize
+		mockSettings.EXPECT().GetLineSize().Return(testCase.lineSize)
+		r := &RenderObject{
+			StartValue:   testCase.start,
+			StopValue:    testCase.stop,
+			CurrentValue: testCase.current,
+			Settings:     mockSettings,
+		}
 
 		stats, numSteps := r.getStatistics()
-
 		assert.Equal(t,
 			testCase.expectedStatistics,
 			stats,

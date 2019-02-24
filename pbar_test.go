@@ -50,6 +50,7 @@ func TestInitialize(t *testing.T) {
 	defer mockCtrl.Finish()
 
 	mockClock := mocks.NewMockClock(mockCtrl)
+	mockSettings := mocks.NewMockSettings(mockCtrl)
 	testCases := []struct {
 		startVal           float64
 		stopVal            float64
@@ -76,13 +77,13 @@ func TestInitialize(t *testing.T) {
 			Step:         testCase.stepVal,
 			Current:      testCase.currentVal,
 			Timer:        mockClock,
+			Settings:     mockSettings,
 			RenderObject: render.MakeRenderObject(testCase.startVal, testCase.stopVal, testCase.stepVal),
 		}
-
-		itr.RenderObject.Write = render.NewWrite(testCase.buffer)
 		err := itr.Initialize()
 
 		assert.Equal(t, itr.RenderObject.Clock, mockClock, fmt.Sprintf("Iterator clock and render clock not equal!"))
+		assert.Equal(t, itr.RenderObject.Settings, mockSettings, fmt.Sprintf("Iterator settings and render settings not equal!"))
 		if testCase.expectError {
 			assert.Error(t, err, fmt.Sprintf("Expected Error not raised"))
 		} else {
@@ -204,18 +205,20 @@ func TestSetDescription(t *testing.T) {
 		desc           string
 		expectedPrefix string
 	}{
-		{"Hello", "Hello: "},
-		{"World", "World: "},
+		{"Hello", "Hello:"},
+		{"World", "World:"},
 	}
 
 	for _, testCase := range testCases {
+		itr.Settings = &render.Set{}
 		itr.SetDescription(testCase.desc)
-		returnedDesc := itr.RenderObject.Description
+		message := fmt.Sprintf("Descriptions not equal; expected: %s, got: %s", testCase.expectedPrefix, itr.Settings.GetDescription())
 
 		assert.Equal(t,
 			testCase.expectedPrefix,
-			returnedDesc,
-			fmt.Sprintf("Descriptions not equal; expected: %s, got: %s", testCase.expectedPrefix, returnedDesc))
+			itr.Settings.GetDescription(),
+			message,
+		)
 	}
 }
 
@@ -229,13 +232,15 @@ func TestSetFinishedIterationSymbol(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
+		itr.Settings = &render.Set{}
 		itr.SetFinishedIterationSymbol(testCase.symbol)
-		returnedSymbol := itr.RenderObject.FinishedIterationSymbol
+		message := fmt.Sprintf("Descriptions not equal; expected: %s, got: %s", testCase.symbol, itr.Settings.GetFinishedIterationSymbol())
 
 		assert.Equal(t,
 			testCase.symbol,
-			returnedSymbol,
-			fmt.Sprintf("Descriptions not equal; expected: %s, got: %s", testCase.symbol, returnedSymbol))
+			itr.Settings.GetFinishedIterationSymbol(),
+			message,
+		)
 	}
 }
 
@@ -249,13 +254,15 @@ func TestSetCurrentIterationSymbol(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
+		itr.Settings = &render.Set{}
 		itr.SetCurrentIterationSymbol(testCase.symbol)
-		returnedSymbol := itr.RenderObject.CurrentIterationSymbol
+		message := fmt.Sprintf("Descriptions not equal; expected: %s, got: %s", testCase.symbol, itr.Settings.GetCurrentIterationSymbol())
 
 		assert.Equal(t,
 			testCase.symbol,
-			returnedSymbol,
-			fmt.Sprintf("Descriptions not equal; expected: %s, got: %s", testCase.symbol, returnedSymbol))
+			itr.Settings.GetCurrentIterationSymbol(),
+			message,
+		)
 	}
 }
 
@@ -269,13 +276,15 @@ func TestSetRemainingIterationSymbol(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
+		itr.Settings = &render.Set{}
 		itr.SetRemainingIterationSymbol(testCase.symbol)
-		returnedSymbol := itr.RenderObject.RemainingIterationSymbol
+		message := fmt.Sprintf("Descriptions not equal; expected: %s, got: %s", testCase.symbol, itr.Settings.GetRemainingIterationSymbol())
 
 		assert.Equal(t,
 			testCase.symbol,
-			returnedSymbol,
-			fmt.Sprintf("Descriptions not equal; expected: %s, got: %s", testCase.symbol, returnedSymbol))
+			itr.Settings.GetRemainingIterationSymbol(),
+			message,
+		)
 	}
 }
 
@@ -289,13 +298,15 @@ func TestSetLParenSymbol(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
+		itr.Settings = &render.Set{}
 		itr.SetLParen(testCase.symbol)
-		returnedSymbol := itr.RenderObject.LParen
+		message := fmt.Sprintf("Descriptions not equal; expected: %s, got: %s", testCase.symbol, itr.Settings.GetLParen())
 
 		assert.Equal(t,
 			testCase.symbol,
-			returnedSymbol,
-			fmt.Sprintf("Descriptions not equal; expected: %s, got: %s", testCase.symbol, returnedSymbol))
+			itr.Settings.GetLParen(),
+			message,
+		)
 	}
 }
 
@@ -309,12 +320,14 @@ func TestSetRParenSymbol(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
+		itr.Settings = &render.Set{}
 		itr.SetRParen(testCase.symbol)
-		returnedSymbol := itr.RenderObject.RParen
+		message := fmt.Sprintf("Descriptions not equal; expected: %s, got: %s", testCase.symbol, itr.Settings.GetRParen())
 
 		assert.Equal(t,
 			testCase.symbol,
-			returnedSymbol,
-			fmt.Sprintf("Descriptions not equal; expected: %s, got: %s", testCase.symbol, returnedSymbol))
+			itr.Settings.GetRParen(),
+			message,
+		)
 	}
 }

@@ -26,8 +26,8 @@
  *
  * Created on 13 January 2019, 11:05
  *
- * Render performs the acutual rendering of the progress bar onto the
- * terminal display.
+ * Write enables a string to be written to an io.Writer object
+ * (such as os.Stdout).
  *
  */
 

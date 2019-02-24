@@ -36,80 +36,69 @@ package render
 import (
 	"fmt"
 	"math"
-	"os"
 	"strings"
 )
 
-var DefaultFinishedIterationSymbol = "#"
-var DefaultCurrentIterationSymbol = "#"
-var DefaultRemainingIterationSymbol = "-"
-var DefaultLParen = "|"
-var DefaultRParen = "|"
-var DefaultMaxLineSize = 80
-var DefaultLineSize = 10
+type Render interface {
+	Initialize(Clock, Settings)
+	Update(float64) error
+	render(string) error
+	formatProgressBar() string
+	getStatistics() (string, int)
+	getBarString(numStepsCompleted int) string
+	getSpeedMeter() string
+}
 
 // RenderObject is the underlying object which controls the
 // various parameters relating to the rendering of the Pbar
 // object.
 type RenderObject struct {
-	Write                    Write
-	Clock                    Clock
-	StartValue               float64
-	CurrentValue             float64
-	EndValue                 float64
-	StepValue                float64
-	Description              string
-	FinishedIterationSymbol  string
-	CurrentIterationSymbol   string
-	RemainingIterationSymbol string
-	LineSize                 int
-	MaxLineSize              int
-	LParen                   string
-	RParen                   string
+	Write        Write
+	Clock        Clock
+	Settings     Settings
+	StartValue   float64
+	CurrentValue float64
+	StopValue    float64
+	StepValue    float64
 }
 
 // MakeRenderObject creates a RenderObject with the initial values set as the
 // default variables.
-func MakeRenderObject(startValue, endValue, stepValue float64) *RenderObject {
+func MakeRenderObject(startValue, stopValue, stepValue float64) Render {
 	renderObj := new(RenderObject)
-	renderObj.Write = NewWrite(os.Stdout)
 	renderObj.StartValue = startValue
 	renderObj.CurrentValue = startValue
 	renderObj.StepValue = stepValue
-	renderObj.EndValue = endValue
-	renderObj.FinishedIterationSymbol = DefaultFinishedIterationSymbol
-	renderObj.CurrentIterationSymbol = DefaultCurrentIterationSymbol
-	renderObj.RemainingIterationSymbol = DefaultRemainingIterationSymbol
-	renderObj.LParen = DefaultLParen
-	renderObj.RParen = DefaultRParen
-	renderObj.MaxLineSize = DefaultMaxLineSize
-	renderObj.LineSize = DefaultLineSize
+	renderObj.StopValue = stopValue
 
 	return renderObj
 }
 
 // Initialize sets the Clock parameter within the RenderObject
 // to a given Clock object.
-func (r *RenderObject) Initialize(c Clock) {
+func (r *RenderObject) Initialize(c Clock, s Settings) {
 	r.Clock = c
+	r.Settings = s
+	r.Write = NewWrite(s.GetWriter())
 }
 
 // Update causes the RenderObject to progress to the next step,
 // returning an error if the currentValue is below the StartValue
-// or above the EndValue.
+// or above the StopValue.
 func (r *RenderObject) Update(currentValue float64) error {
-	if currentValue < r.StartValue || currentValue > r.EndValue {
+	if currentValue < r.StartValue || currentValue > r.StopValue {
 		return fmt.Errorf(
 			"Current value: %f is incorrect. Start: %f; end: %f",
 			currentValue,
 			r.StartValue,
-			r.EndValue)
+			r.StopValue,
+		)
 	}
 
 	r.CurrentValue = currentValue
 	wholeProgressBar := r.formatProgressBar()
 
-	if currentValue == r.EndValue {
+	if currentValue == r.StopValue {
 		wholeProgressBar += "\n"
 	}
 
@@ -135,12 +124,13 @@ func (r *RenderObject) formatProgressBar() string {
 	statistics, numStepsCompleted := r.getStatistics()
 	barString := r.getBarString(numStepsCompleted)
 	bar := fmt.Sprintf("%s%s%s",
-		r.LParen,
+		r.Settings.GetLParen(),
 		barString,
-		r.RParen)
+		r.Settings.GetRParen(),
+	)
 
 	speedMeter := r.getSpeedMeter()
-	progressBar := strings.Join([]string{r.Description, bar, statistics, speedMeter}, " ")
+	progressBar := strings.Join([]string{r.Settings.GetDescription(), bar, statistics, speedMeter}, " ")
 
 	return progressBar
 }
@@ -149,10 +139,10 @@ func (r *RenderObject) formatProgressBar() string {
 // progression of the progress bar. These are then formed and returned
 // in a string, alongside the number of steps that have been completed.
 func (r *RenderObject) getStatistics() (string, int) {
-	ratio := r.CurrentValue / r.EndValue
+	ratio := r.CurrentValue / r.StopValue
 	percentage := ratio * 100.0
-	statistics := fmt.Sprintf("%.1f/%.1f %.1f%%", r.CurrentValue, r.EndValue, percentage)
-	numStepsCompleted := int(ratio * float64(r.LineSize))
+	statistics := fmt.Sprintf("%.1f/%.1f %.1f%%", r.CurrentValue, r.StopValue, percentage)
+	numStepsCompleted := int(ratio * float64(r.Settings.GetLineSize()))
 
 	return statistics, numStepsCompleted
 }
@@ -163,19 +153,24 @@ func (r *RenderObject) getBarString(numStepsCompleted int) string {
 	var currString string
 	var remString string
 
+	remainingSymbol := r.Settings.GetRemainingIterationSymbol()
+	currentSymbol := r.Settings.GetCurrentIterationSymbol()
+	finishedSymbol := r.Settings.GetFinishedIterationSymbol()
+	lineSize := r.Settings.GetLineSize()
+
 	switch numStepsCompleted {
 	case 0:
-		remString = strings.Repeat(r.RemainingIterationSymbol, r.LineSize)
+		remString = strings.Repeat(remainingSymbol, lineSize)
 	case 1:
-		currString = r.CurrentIterationSymbol
-		remString = strings.Repeat(r.RemainingIterationSymbol, r.LineSize-1)
-	case r.LineSize:
-		finString = strings.Repeat(r.FinishedIterationSymbol, r.LineSize-1)
-		currString = r.CurrentIterationSymbol
+		currString = currentSymbol
+		remString = strings.Repeat(remainingSymbol, lineSize-1)
+	case lineSize:
+		finString = strings.Repeat(finishedSymbol, lineSize-1)
+		currString = currentSymbol
 	default:
-		finString = strings.Repeat(r.FinishedIterationSymbol, numStepsCompleted-1)
-		currString = r.CurrentIterationSymbol
-		remString = strings.Repeat(r.RemainingIterationSymbol, r.LineSize-numStepsCompleted)
+		finString = strings.Repeat(finishedSymbol, numStepsCompleted-1)
+		currString = currentSymbol
+		remString = strings.Repeat(remainingSymbol, lineSize-numStepsCompleted)
 	}
 
 	barString := fmt.Sprintf("%s%s%s", finString, currString, remString)
@@ -190,7 +185,7 @@ func (r *RenderObject) getSpeedMeter() string {
 	if r.CurrentValue > r.StartValue {
 		elapsed := r.Clock.Subtract(r.Clock.Now())
 		rate := (r.CurrentValue - r.StartValue) / elapsed.Seconds()
-		remainingTime := r.Clock.Remaining(math.Round((r.EndValue - r.CurrentValue) / rate))
+		remainingTime := r.Clock.Remaining(math.Round((r.StopValue - r.CurrentValue) / rate))
 
 		return fmt.Sprintf("[elapsed: %s, left: %s, %.2f iters/sec]",
 			r.Clock.Format(elapsed),

@@ -55,87 +55,58 @@ func TestMakeRenderObject(t *testing.T) {
 
 	for _, testCase := range testCases {
 		r := render.MakeRenderObject(testCase.start, testCase.stop, testCase.step)
+
+		assert.Implements(
+			t,
+			(*render.Render)(nil),
+			r,
+			fmt.Sprintf("Render type does not match expected: %v; got: %v", (*render.Render)(nil), r),
+		)
+
 		assert.Equal(
 			t,
 			testCase.start,
-			r.StartValue,
-			fmt.Sprintf("Start values unequal expected: %v; got %v", testCase.start, r.StartValue),
+			r.(*render.RenderObject).StartValue,
+			fmt.Sprintf("Start values unequal expected: %v; got %v", testCase.start, r.(*render.RenderObject).StartValue),
 		)
 
 		assert.Equal(
 			t,
 			testCase.stop,
-			r.EndValue,
-			fmt.Sprintf("End values unqueal expected: %v; got: %v", testCase.stop, r.EndValue),
+			r.(*render.RenderObject).StopValue,
+			fmt.Sprintf("Stop values unqueal expected: %v; got: %v", testCase.stop, r.(*render.RenderObject).StopValue),
 		)
 
 		assert.Equal(
 			t,
 			testCase.step,
-			r.StepValue,
-			fmt.Sprintf("Step values unqueal expected: %v; got: %v", testCase.step, r.StepValue),
+			r.(*render.RenderObject).StepValue,
+			fmt.Sprintf("Step values unqueal expected: %v; got: %v", testCase.step, r.(*render.RenderObject).StepValue),
 		)
 
 		assert.Equal(
 			t,
 			testCase.start,
-			r.CurrentValue,
-			fmt.Sprintf("Current values unqueal expected: %v; got: %v", testCase.start, r.CurrentValue),
-		)
-
-		assert.Equal(
-			t,
-			render.DefaultFinishedIterationSymbol,
-			r.FinishedIterationSymbol,
-			fmt.Sprintf("Finished Iteration Symbol unqueal expected: %v; got: %v", render.DefaultFinishedIterationSymbol, r.FinishedIterationSymbol),
-		)
-
-		assert.Equal(
-			t,
-			render.DefaultCurrentIterationSymbol,
-			r.CurrentIterationSymbol,
-			fmt.Sprintf("Current Iteration Symbol unqueal expected: %v; got: %v", render.DefaultCurrentIterationSymbol, r.CurrentIterationSymbol),
-		)
-
-		assert.Equal(
-			t,
-			render.DefaultRemainingIterationSymbol,
-			r.RemainingIterationSymbol,
-			fmt.Sprintf("Remaining Iteration Symbol unqueal expected: %v; got: %v", render.DefaultRemainingIterationSymbol, r.RemainingIterationSymbol),
-		)
-
-		assert.Equal(
-			t,
-			render.DefaultLParen,
-			r.LParen,
-			fmt.Sprintf("LParen Symbol unequal expected: %v; got: %v", render.DefaultLParen, r.LParen),
-		)
-
-		assert.Equal(
-			t,
-			render.DefaultRParen,
-			r.RParen,
-			fmt.Sprintf("RParen Symbol unqueal expected: %v; got: %v", render.DefaultRParen, r.RParen),
-		)
-
-		assert.Equal(
-			t,
-			render.DefaultMaxLineSize,
-			r.MaxLineSize,
-			fmt.Sprintf("Max Line Size unqueal expected: %v; got: %v", render.DefaultMaxLineSize, r.MaxLineSize),
-		)
-
-		assert.Equal(
-			t,
-			render.DefaultLineSize,
-			r.LineSize,
-			fmt.Sprintf("Line Size unqueal expected: %v; got: %v", render.DefaultLineSize, r.LineSize),
+			r.(*render.RenderObject).CurrentValue,
+			fmt.Sprintf("Current values unqueal expected: %v; got: %v", testCase.start, r.(*render.RenderObject).CurrentValue),
 		)
 
 		assert.Zero(
 			t,
-			r.Description,
-			fmt.Sprintf("End values unqueal expected: %v; got: %v", "", r.Description),
+			r.(*render.RenderObject).Clock,
+			fmt.Sprintf("Clock is not nil: %v", r.(*render.RenderObject).Clock),
+		)
+
+		assert.Zero(
+			t,
+			r.(*render.RenderObject).Write,
+			fmt.Sprintf("Write is not nil: %v", r.(*render.RenderObject).Write),
+		)
+
+		assert.Zero(
+			t,
+			r.(*render.RenderObject).Settings,
+			fmt.Sprintf("Settings is not nil: %v", r.(*render.RenderObject).Settings),
 		)
 	}
 }
@@ -145,6 +116,7 @@ func TestUpdate(t *testing.T) {
 	defer mockCtrl.Finish()
 
 	mockClock := mocks.NewMockClock(mockCtrl)
+	mockSettings := mocks.NewMockSettings(mockCtrl)
 	testCases := []struct {
 		startVal        float64
 		stopVal         float64
@@ -164,9 +136,14 @@ func TestUpdate(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		r := render.MakeRenderObject(testCase.startVal, testCase.stopVal, testCase.stepVal)
-		r.Write = render.NewWrite(testCase.buffer)
-		r.Initialize(mockClock)
+		r := &render.RenderObject{
+			StartValue: testCase.startVal,
+			StopValue:  testCase.stopVal,
+			StepValue:  testCase.stepVal,
+			Clock:      mockClock,
+			Settings:   mockSettings,
+			Write:      render.NewWrite(testCase.buffer),
+		}
 
 		if testCase.elapsed != "" && testCase.remaining != "" {
 			elapsedDur, err := time.ParseDuration(testCase.elapsed)
@@ -180,11 +157,21 @@ func TestUpdate(t *testing.T) {
 			}
 
 			gomock.InOrder(
+				mockSettings.EXPECT().GetLineSize().Return(render.DefaultLineSize),
+				mockSettings.EXPECT().GetRemainingIterationSymbol().Return(render.DefaultRemainingIterationSymbol),
+				mockSettings.EXPECT().GetCurrentIterationSymbol().Return(render.DefaultCurrentIterationSymbol),
+				mockSettings.EXPECT().GetFinishedIterationSymbol().Return(render.DefaultFinishedIterationSymbol),
+				mockSettings.EXPECT().GetLineSize().Return(render.DefaultLineSize),
+				mockSettings.EXPECT().GetLParen().Return(render.DefaultLParen),
+				mockSettings.EXPECT().GetRParen().Return(render.DefaultRParen),
+
 				mockClock.EXPECT().Now(),
 				mockClock.EXPECT().Subtract(gomock.Any()).Return(elapsedDur),
 				mockClock.EXPECT().Remaining(gomock.Any()).Return(remainingDur),
 				mockClock.EXPECT().Format(gomock.Any()).Return(testCase.formatElapsed),
 				mockClock.EXPECT().Format(gomock.Any()).Return(testCase.formatRemaining),
+
+				mockSettings.EXPECT().GetDescription().Return(render.DefaultDescription),
 			)
 		}
 
@@ -211,6 +198,7 @@ func TestInitialize(t *testing.T) {
 	defer mockCtrl.Finish()
 
 	mockClock := mocks.NewMockClock(mockCtrl)
+	mockSettings := mocks.NewMockSettings(mockCtrl)
 	testCases := []struct {
 		startVal float64
 		endVal   float64
@@ -220,14 +208,27 @@ func TestInitialize(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		r := render.MakeRenderObject(testCase.startVal, testCase.endVal, testCase.stepVal)
-		r.Initialize(mockClock)
+		mockSettings.EXPECT().GetWriter().Return(render.DefaultWriter)
+		r := &render.RenderObject{
+			StartValue: testCase.startVal,
+			StopValue:  testCase.endVal,
+			StepValue:  testCase.stepVal,
+		}
 
-		message := fmt.Sprintf(
-			"Clocks not equal expected: %v; got %v",
+		r.Initialize(mockClock, mockSettings)
+
+		assert.Equal(
+			t,
 			mockClock,
 			r.Clock,
+			fmt.Sprintf("Clocks not equal expected: %v; got %v", mockClock, r.Clock),
 		)
-		assert.Equal(t, mockClock, r.Clock, message)
+
+		assert.Equal(
+			t,
+			mockSettings,
+			r.Settings,
+			fmt.Sprintf("Settings not equal expected: %v; got: %v", mockSettings, r.Settings),
+		)
 	}
 }
