@@ -26,7 +26,7 @@
  *
  * Created on 13 January 2019, 11:05
  *
- *
+ * Holds the underlying start, stop, step and current values for the progress bar
  *
  */
 
@@ -34,6 +34,9 @@ package render
 
 import "fmt"
 
+// Values holds the start, stop, step and current values for the progress bar.
+// It also enables statistics to be calculated for these values relating to
+// the ratio of completion.
 type Values interface {
 	SetStart(float64)
 	SetStop(float64)
@@ -48,6 +51,7 @@ type Values interface {
 	Statistics(int) (string, int)
 }
 
+// Holds the Start, Stop, Step and Current values
 type Vals struct {
 	Start   float64
 	Stop    float64
@@ -55,40 +59,49 @@ type Vals struct {
 	Current float64
 }
 
+// NewValues generates a NewValues interface
 func NewValues() Values {
 	v := new(Vals)
 
 	return v
 }
 
+// SetStart sets the Start value
 func (v *Vals) SetStart(s float64) {
 	v.Start = s
 }
 
+// SetStop sets the Stop value
 func (v *Vals) SetStop(s float64) {
 	v.Stop = s
 }
 
+// SetStep sets the Step value
 func (v *Vals) SetStep(s float64) {
 	v.Step = s
 }
 
+// SetCurrent sets the Current value
 func (v *Vals) SetCurrent(s float64) {
 	v.Current = s
 }
 
+// GetStart gets the Start value
 func (v *Vals) GetStart() float64 {
 	return v.Start
 }
 
+// GetStop gets the Stop value
 func (v *Vals) GetStop() float64 {
 	return v.Stop
 }
 
+// GetStep gets the Step value
 func (v *Vals) GetStep() float64 {
 	return v.Step
 }
 
+// GetCurrent gets the Current value
 func (v *Vals) GetCurrent() float64 {
 	return v.Current
 }

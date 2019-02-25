@@ -43,6 +43,15 @@ import (
 	"github.com/kinsey40/pbar/render"
 )
 
+// Iterate enables the progress bar execution.
+// Various settings can be manipulated using the Set*() functions.
+// To create a progress bar, call the Pbar() function.
+// Initialize() the progress bar before the for-loop
+// Update() at the end of each iteration within the for-loop.
+//
+// It is recommended that you do not create an Iterate object directly,
+// but instead use the Pbar() function which will automatically set the variables
+// correctly
 type Iterate interface {
 	Initialize() error
 	Update() error

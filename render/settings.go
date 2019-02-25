@@ -26,7 +26,7 @@
  *
  * Created on 13 January 2019, 11:05
  *
- *
+ * Settings holds the various progress bar settings
  *
  */
 
@@ -46,6 +46,9 @@ var DefaultRParen = "|"
 var DefaultMaxLineSize = 80
 var DefaultLineSize = 10
 
+// Settings enables the setting and getting the setting parameters
+// for the progress bar. It also enables the creation of the bar
+// string
 type Settings interface {
 	SetDescription(string)
 	SetFinishedIterationSymbol(string)
@@ -68,6 +71,7 @@ type Settings interface {
 	CreateBarString(int) string
 }
 
+// Set holds the setting parameters
 type Set struct {
 	Description              string
 	FinishedIterationSymbol  string
@@ -79,6 +83,7 @@ type Set struct {
 	RParen                   string
 }
 
+// NewSettings creates a Settings interface
 func NewSettings() Settings {
 	s := new(Set)
 	s.Description = DefaultDescription
@@ -93,6 +98,7 @@ func NewSettings() Settings {
 	return s
 }
 
+// SetDescription sets the Description value
 func (s *Set) SetDescription(str string) {
 	if str != DefaultDescription {
 		s.Description = str + ":"
@@ -101,18 +107,22 @@ func (s *Set) SetDescription(str string) {
 	}
 }
 
+// SetFinishedIterationSymbol sets the FinishedIterationSymbol value
 func (s *Set) SetFinishedIterationSymbol(str string) {
 	s.FinishedIterationSymbol = str
 }
 
+// SetCurrentIterationSymbol sets the CurrentIterationSymbol value
 func (s *Set) SetCurrentIterationSymbol(str string) {
 	s.CurrentIterationSymbol = str
 }
 
+// SetRRemainingIterationSymbol sets the RemainingIterationSymbol value
 func (s *Set) SetRemainingIterationSymbol(str string) {
 	s.RemainingIterationSymbol = str
 }
 
+// SetLineSize sets the LineSize value
 func (s *Set) SetLineSize(i int) {
 	if i > s.MaxLineSize {
 		s.LineSize = s.MaxLineSize
@@ -121,46 +131,57 @@ func (s *Set) SetLineSize(i int) {
 	}
 }
 
+// SetMaxLineSize sets the MaxLineSize value
 func (s *Set) SetMaxLineSize(i int) {
 	s.MaxLineSize = i
 }
 
+// SetLParen sets the LParen value
 func (s *Set) SetLParen(str string) {
 	s.LParen = str
 }
 
+// SetRParem sets the RParen value
 func (s *Set) SetRParen(str string) {
 	s.RParen = str
 }
 
+// GetDescription gets the Description value
 func (s *Set) GetDescription() string {
 	return s.Description
 }
 
+// GetFinishedIterationSymbol gets the FinishedIterationSymbol value
 func (s *Set) GetFinishedIterationSymbol() string {
 	return s.FinishedIterationSymbol
 }
 
+// GetCurrentIterationSymbol gets the CurrentIterationSymbol value
 func (s *Set) GetCurrentIterationSymbol() string {
 	return s.CurrentIterationSymbol
 }
 
+// GetRemainingIterationSymbol gets the RemainingIterationSymbol value
 func (s *Set) GetRemainingIterationSymbol() string {
 	return s.RemainingIterationSymbol
 }
 
+// GetLineSize gets the LineSize value
 func (s *Set) GetLineSize() int {
 	return s.LineSize
 }
 
+// GetMaxLineSize gets the MaxLineSize value
 func (s *Set) GetMaxLineSize() int {
 	return s.MaxLineSize
 }
 
+// GetLParen gets the LParen value
 func (s *Set) GetLParen() string {
 	return s.LParen
 }
 
+// GetRParen gets the RParen value
 func (s *Set) GetRParen() string {
 	return s.RParen
 }
