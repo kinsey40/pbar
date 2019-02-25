@@ -34,11 +34,9 @@ func (m *MockClock) EXPECT() *MockClockMockRecorder {
 }
 
 // Now mocks base method
-func (m *MockClock) Now() time.Time {
+func (m *MockClock) Now() {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Now")
-	ret0, _ := ret[0].(time.Time)
-	return ret0
+	m.ctrl.Call(m, "Now")
 }
 
 // Now indicates an expected call of Now
@@ -48,29 +46,29 @@ func (mr *MockClockMockRecorder) Now() *gomock.Call {
 }
 
 // Subtract mocks base method
-func (m *MockClock) Subtract(arg0 time.Time) time.Duration {
+func (m *MockClock) Subtract() time.Duration {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Subtract", arg0)
+	ret := m.ctrl.Call(m, "Subtract")
 	ret0, _ := ret[0].(time.Duration)
 	return ret0
 }
 
 // Subtract indicates an expected call of Subtract
-func (mr *MockClockMockRecorder) Subtract(arg0 interface{}) *gomock.Call {
+func (mr *MockClockMockRecorder) Subtract() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Subtract", reflect.TypeOf((*MockClock)(nil).Subtract), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Subtract", reflect.TypeOf((*MockClock)(nil).Subtract))
 }
 
-// SetStart mocks base method
-func (m *MockClock) SetStart(arg0 time.Time) {
+// SetStartTime mocks base method
+func (m *MockClock) SetStartTime() {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetStart", arg0)
+	m.ctrl.Call(m, "SetStartTime")
 }
 
-// SetStart indicates an expected call of SetStart
-func (mr *MockClockMockRecorder) SetStart(arg0 interface{}) *gomock.Call {
+// SetStartTime indicates an expected call of SetStartTime
+func (mr *MockClockMockRecorder) SetStartTime() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetStart", reflect.TypeOf((*MockClock)(nil).SetStart), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetStartTime", reflect.TypeOf((*MockClock)(nil).SetStartTime))
 }
 
 // Start mocks base method

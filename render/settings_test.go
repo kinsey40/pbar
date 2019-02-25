@@ -110,6 +110,7 @@ func TestSetDescription(t *testing.T) {
 		expectedOutput string
 	}{
 		{"Hello", "Hello:"},
+		{render.DefaultDescription, render.DefaultDescription},
 	}
 
 	for _, testCase := range testCases {
@@ -179,6 +180,7 @@ func TestSetLineSize(t *testing.T) {
 		expectedOutput int
 	}{
 		{5, 10, 5},
+		{10, 5, 5},
 	}
 
 	for _, testCase := range testCases {

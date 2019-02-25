@@ -33,169 +33,202 @@
 package pbar_test
 
 import (
+	"bytes"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/kinsey40/pbar"
 	"github.com/kinsey40/pbar/render"
 	"github.com/stretchr/testify/assert"
 )
 
-// func TestInitialize(t *testing.T) {
-// 	mockCtrl := gomock.NewController(t)
-// 	defer mockCtrl.Finish()
+func TestInitialize(t *testing.T) {
+	testCases := []struct {
+		startVal                 float64
+		stopVal                  float64
+		stepVal                  float64
+		currentVal               float64
+		description              string
+		finishedIterationSymbol  string
+		currentIterationSymbol   string
+		remainingIterationSymbol string
+		lineSize                 int
+		maxLineSize              int
+		lParen                   string
+		rParen                   string
+		buffer                   *bytes.Buffer
+		expectError              bool
+		expectedOutput           string
+	}{
+		{0.0, 5.0, 1.0, 0.0, "", "#", "#", "-", 10, 80, "|", "|", new(bytes.Buffer), false, "\r|----------| 0.0/5.0 0.0% [elapsed: 00m:00s, left: N/A, N/A iters/sec]"},
+		{1.0, 5.0, 1.0, 0.0, "", "#", "#", "-", 10, 80, "|", "|", new(bytes.Buffer), true, ""},
+	}
 
-// 	mockClock := mocks.NewMockClock(mockCtrl)
-// 	mockSettings := mocks.NewMockSettings(mockCtrl)
-// 	testCases := []struct {
-// 		startVal           float64
-// 		stopVal            float64
-// 		stepVal            float64
-// 		currentVal         float64
-// 		expectedCurrentVal float64
-// 		currentTime        time.Time
-// 		buffer             *bytes.Buffer
-// 		expectError        bool
-// 	}{
-// 		{0.0, 5.0, 1.0, 0.0, 1.0, time.Unix(10, 0), new(bytes.Buffer), false},
-// 		{1.0, 5.0, 1.0, 0.0, 1.0, time.Unix(10, 0), new(bytes.Buffer), true},
-// 	}
+	for _, testCase := range testCases {
+		v := &render.Vals{
+			Start:   testCase.startVal,
+			Stop:    testCase.stopVal,
+			Step:    testCase.stepVal,
+			Current: testCase.currentVal,
+		}
 
-// 	for _, testCase := range testCases {
-// 		itr := &pbar.Iterator{
-// 			Start:        testCase.startVal,
-// 			Stop:         testCase.stopVal,
-// 			Step:         testCase.stepVal,
-// 			Current:      testCase.currentVal,
-// 			Timer:        mockClock,
-// 			Settings:     mockSettings,
-// 			RenderObject: mockRender,
-// 		}
+		w := &render.Writing{
+			W: testCase.buffer,
+		}
 
-// 		gomock.InOrder(
-// 			mockClock.EXPECT().Now().Return(testCase.currentTime),
-// 			mockClock.EXPECT().SetStart(testCase.currentTime),
-// 			mockRender.EXPECT().Initialize(mockClock, mockSettings),
-// 		)
+		s := &render.Set{
+			Description:              testCase.description,
+			FinishedIterationSymbol:  testCase.finishedIterationSymbol,
+			CurrentIterationSymbol:   testCase.currentIterationSymbol,
+			RemainingIterationSymbol: testCase.remainingIterationSymbol,
+			LineSize:                 testCase.lineSize,
+			MaxLineSize:              testCase.maxLineSize,
+			LParen:                   testCase.lParen,
+			RParen:                   testCase.rParen,
+		}
 
-// 		err := itr.Initialize()
+		c := &render.ClockVal{}
 
-// 		// assert.Equal(t, itr.RenderObject.Clock, mockClock, fmt.Sprintf("Iterator clock and render clock not equal!"))
-// 		// assert.Equal(t, itr.RenderObject.Settings, mockSettings, fmt.Sprintf("Iterator settings and render settings not equal!"))
-// 		if testCase.expectError {
-// 			assert.Error(t, err, fmt.Sprintf("Expected Error not raised"))
-// 		} else {
-// 			assert.NoError(t, err, fmt.Sprintf("Unexpected error raised: %v", err))
-// 			assert.Equal(t,
-// 				testCase.expectedCurrentVal,
-// 				itr.Current,
-// 				fmt.Sprintf("Itr current value expected: %v; got: %v", testCase.expectedCurrentVal, itr.Current))
-// 		}
-// 	}
-// }
+		itr := &pbar.Iterator{
+			Clock:    c,
+			Settings: s,
+			Write:    w,
+			Values:   v,
+		}
 
-// func TestUpdate(t *testing.T) {
-// 	mockCtrl := gomock.NewController(t)
-// 	defer mockCtrl.Finish()
+		err := itr.Initialize()
+		got := testCase.buffer.String()
 
-// 	mockClock := mocks.NewMockClock(mockCtrl)
-// 	testCases := []struct {
-// 		startVal        float64
-// 		stopVal         float64
-// 		stepVal         float64
-// 		currentVal      float64
-// 		buffer          *bytes.Buffer
-// 		elapsed         string
-// 		remaining       string
-// 		formatElapsed   string
-// 		formatRemaining string
-// 		expectError     bool
-// 		expectedOutput  string
-// 	}{
-// 		{0.0, 5.0, 1.0, 0.0, new(bytes.Buffer), "2s", "5s", "00m:02s", "00m:05s", false, "\r |----------| 0.0/5.0 0.0% [elapsed: 00m:00s, left: N/A, N/A iters/sec]"},
-// 		{0.0, 5.0, 1.0, 1.0, new(bytes.Buffer), "2s", "5s", "00m:02s", "00m:05s", false, "\r |##--------| 1.0/5.0 20.0% [elapsed: 00m:02s, left: 00m:05s, 0.50 iters/sec]"},
-// 		{0.0, 5.0, 1.0, 5.0, new(bytes.Buffer), "4s", "1s", "00m:04s", "00m:01s", true, "\r |##########| 5.0/5.0 100.0% [elapsed: 00m:04s, left: 00m:01s, 1.25 iters/sec]\n"},
-// 		{1.0, 5.0, 1.0, 0.0, new(bytes.Buffer), "1s", "1s", "00m:01s", "00m:01s", true, ""},
-// 		{1.0, 5.0, 1.0, 6.0, new(bytes.Buffer), "1s", "1s", "00m:01s", "00m:01s", true, ""},
-// 	}
+		assert.NotNil(t, c.StartTime, fmt.Sprintf("StartTime is nil!"))
+		if testCase.expectError {
+			assert.Error(t, err, fmt.Sprintf("Expected Error not raised"))
+		} else {
+			assert.NoError(t, err, fmt.Sprintf("Unexpected error raised: %v", err))
+			assert.Equal(
+				t,
+				testCase.expectedOutput,
+				got,
+				fmt.Sprintf("Itr output incorrect expected: %v; got: %v", testCase.expectedOutput, got))
+		}
+	}
+}
 
-// 	for _, testCase := range testCases {
-// 		itr := pbar.Iterator{
-// 			Start:        testCase.startVal,
-// 			Stop:         testCase.stopVal,
-// 			Step:         testCase.stepVal,
-// 			Current:      testCase.currentVal,
-// 			RenderObject: render.MakeRenderObject(testCase.startVal, testCase.stopVal, testCase.stepVal),
-// 		}
-// 		itr.RenderObject.Clock = mockClock
-// 		itr.RenderObject.Write = render.NewWrite(testCase.buffer)
+func TestUpdate(t *testing.T) {
+	testCases := []struct {
+		startVal                 float64
+		stopVal                  float64
+		stepVal                  float64
+		currentVal               float64
+		description              string
+		finishedIterationSymbol  string
+		currentIterationSymbol   string
+		remainingIterationSymbol string
+		lineSize                 int
+		maxLineSize              int
+		lParen                   string
+		rParen                   string
+		elapsedSecs              int64
+		elapsedNanoSecs          int64
+		buffer                   *bytes.Buffer
+		expectError              bool
+		expectedEndCurrentVal    float64
+		expectedOutput           string
+	}{
+		{0.0, 5.0, 1.0, 0.0, "", "#", "#", "-", 10, 80, "|", "|", 0, 0, new(bytes.Buffer), false, 1.0, "\r|----------| 0.0/5.0 0.0% [elapsed: 00m:00s, left: N/A, N/A iters/sec]"},
+		{0.0, 5.0, 1.0, 1.0, "", "#", "#", "-", 10, 80, "|", "|", 2, 0, new(bytes.Buffer), false, 2.0, "\r|##--------| 1.0/5.0 20.0% [elapsed: 00m:02s, left: 00m:08s, 0.50 iters/sec]"},
+		{0.0, 5.0, 1.0, 5.0, "", "#", "#", "-", 10, 80, "|", "|", 4, 0, new(bytes.Buffer), false, 6.0, "\r|##########| 5.0/5.0 100.0% [elapsed: 00m:04s, left: 00m:00s, 1.25 iters/sec]\n"},
+		{1.0, 5.0, 1.0, 0.0, "", "#", "#", "-", 10, 80, "|", "|", 0, 0, new(bytes.Buffer), true, 1.0, ""},
+		{1.0, 5.0, 1.0, 6.0, "", "#", "#", "-", 10, 80, "|", "|", 0, 0, new(bytes.Buffer), true, 1.0, ""},
+	}
 
-// 		if testCase.elapsed != "" && testCase.remaining != "" {
-// 			elapsedDur, err := time.ParseDuration(testCase.elapsed)
-// 			if err != nil {
-// 				t.Errorf("Error raised in parsing elapsed: %v", elapsedDur)
-// 			}
+	for _, testCase := range testCases {
+		render.NowTime = func() time.Time { return time.Unix(testCase.elapsedSecs, testCase.elapsedNanoSecs) }
+		c := &render.ClockVal{
+			StartTime: time.Unix(0, 0),
+		}
 
-// 			remainingDur, err := time.ParseDuration(testCase.remaining)
-// 			if err != nil {
-// 				t.Errorf("Error raised in parsing remaining: %v", remainingDur)
-// 			}
+		v := &render.Vals{
+			Start:   testCase.startVal,
+			Stop:    testCase.stopVal,
+			Step:    testCase.stepVal,
+			Current: testCase.currentVal,
+		}
 
-// 			if testCase.currentVal > testCase.startVal && testCase.currentVal <= testCase.stopVal {
-// 				gomock.InOrder(
-// 					mockClock.EXPECT().Now(),
-// 					mockClock.EXPECT().Subtract(gomock.Any()).Return(elapsedDur),
-// 					mockClock.EXPECT().Remaining(gomock.Any()).Return(remainingDur),
-// 					mockClock.EXPECT().Format(gomock.Any()).Return(testCase.formatElapsed),
-// 					mockClock.EXPECT().Format(gomock.Any()).Return(testCase.formatRemaining),
-// 				)
-// 			}
-// 		}
+		w := &render.Writing{
+			W: testCase.buffer,
+		}
 
-// 		err := itr.Update()
-// 		got := testCase.buffer.String()
+		s := &render.Set{
+			Description:              testCase.description,
+			FinishedIterationSymbol:  testCase.finishedIterationSymbol,
+			CurrentIterationSymbol:   testCase.currentIterationSymbol,
+			RemainingIterationSymbol: testCase.remainingIterationSymbol,
+			LineSize:                 testCase.lineSize,
+			MaxLineSize:              testCase.maxLineSize,
+			LParen:                   testCase.lParen,
+			RParen:                   testCase.rParen,
+		}
 
-// 		assert.Equal(t,
-// 			testCase.expectedOutput,
-// 			got,
-// 			fmt.Sprintf("Output string incorrect expected: %v; got: %v", testCase.expectedOutput, got))
+		itr := pbar.Iterator{
+			Values:   v,
+			Settings: s,
+			Clock:    c,
+			Write:    w,
+		}
 
-// 		if testCase.expectError {
-// 			assert.Error(t, err, fmt.Sprintf("Unexpected error raised: %v", err))
-// 		} else {
-// 			assert.NoError(t, err, fmt.Sprintf("Expected Error not raised"))
-// 		}
-// 	}
-// }
+		err := itr.Update()
+		got := testCase.buffer.String()
 
-// func TestPbar(t *testing.T) {
-// 	testCases := []struct {
-// 		values      []interface{}
-// 		expectError bool
-// 	}{
-// 		{[]interface{}{float64(1), []int{}}, true},
-// 		{[]interface{}{[]int{}, float64(1)}, true},
-// 		{[]interface{}{complex128(1)}, true},
-// 		{[]interface{}{}, true},
-// 		{[]interface{}{float64(2), float64(1), float64(1)}, true},
-// 		{[]interface{}{float64(1), float64(2), float64(100)}, false},
-// 		{[]interface{}{float64(1), float64(10), float64(1)}, false},
-// 		{[]interface{}{[]int{1, 2, 3}}, false},
-// 		{[]interface{}{"Hello!"}, false},
-// 		{[]interface{}{map[string]int{"1": 1, "2": 2}}, false},
-// 	}
+		assert.Equal(t,
+			testCase.expectedOutput,
+			got,
+			fmt.Sprintf("Output string incorrect expected: %v; got: %v", testCase.expectedOutput, got),
+		)
 
-// 	for _, testCase := range testCases {
-// 		itr, err := pbar.Pbar(testCase.values...)
-// 		if testCase.expectError {
-// 			assert.Error(t, err, fmt.Sprintf("Expected error was not raised!"))
-// 			assert.Nil(t, itr, fmt.Sprintf("Iterator is not nil (%v)", itr))
-// 		} else {
-// 			assert.NoError(t, err, fmt.Sprintf("Unexpected error(%v) was raised!", err))
-// 			assert.NotNil(t, itr, fmt.Sprintf("Iterator is nil!"))
-// 		}
-// 	}
-// }
+		if testCase.expectError {
+			assert.Error(t, err, fmt.Sprintf("Unexpected error raised: %v", err))
+		} else {
+			assert.NoError(t, err, fmt.Sprintf("Expected Error not raised"))
+			assert.Equal(
+				t,
+				testCase.expectedEndCurrentVal,
+				itr.Values.GetCurrent(),
+				fmt.Sprintf("Current Value incorrect expected: %v; got: %v", testCase.expectedEndCurrentVal, itr.Values.GetCurrent()),
+			)
+		}
+	}
+}
+
+func TestPbar(t *testing.T) {
+	testCases := []struct {
+		values      []interface{}
+		expectError bool
+	}{
+		{[]interface{}{float64(1), []int{}}, true},
+		{[]interface{}{[]int{}, float64(1)}, true},
+		{[]interface{}{complex128(1)}, true},
+		{[]interface{}{}, true},
+		{[]interface{}{float64(2), float64(1), float64(1)}, true},
+		{[]interface{}{float64(1), float64(2), float64(100)}, false},
+		{[]interface{}{float64(1), float64(10), float64(1)}, false},
+		{[]interface{}{[]int{1, 2, 3}}, false},
+		{[]interface{}{"Hello!"}, false},
+		{[]interface{}{map[string]int{"1": 1, "2": 2}}, false},
+	}
+
+	for _, testCase := range testCases {
+		itr, err := pbar.Pbar(testCase.values...)
+		if testCase.expectError {
+			assert.Error(t, err, fmt.Sprintf("Expected error was not raised!"))
+			assert.Nil(t, itr, fmt.Sprintf("Iterator is not nil (%v)", itr))
+		} else {
+			assert.NoError(t, err, fmt.Sprintf("Unexpected error(%v) was raised!", err))
+			assert.NotNil(t, itr, fmt.Sprintf("Iterator is nil!"))
+			assert.Implements(t, (*pbar.Iterate)(nil), itr, fmt.Sprintf("Itr does not implement Iterate!"))
+		}
+	}
+}
 
 func TestSetDescription(t *testing.T) {
 	itr := &pbar.Iterator{}
@@ -212,7 +245,8 @@ func TestSetDescription(t *testing.T) {
 		itr.SetDescription(testCase.desc)
 		message := fmt.Sprintf("Descriptions not equal; expected: %s, got: %s", testCase.expectedPrefix, itr.Settings.GetDescription())
 
-		assert.Equal(t,
+		assert.Equal(
+			t,
 			testCase.expectedPrefix,
 			itr.Settings.GetDescription(),
 			message,
@@ -234,7 +268,8 @@ func TestSetFinishedIterationSymbol(t *testing.T) {
 		itr.SetFinishedIterationSymbol(testCase.symbol)
 		message := fmt.Sprintf("Descriptions not equal; expected: %s, got: %s", testCase.symbol, itr.Settings.GetFinishedIterationSymbol())
 
-		assert.Equal(t,
+		assert.Equal(
+			t,
 			testCase.symbol,
 			itr.Settings.GetFinishedIterationSymbol(),
 			message,
@@ -256,7 +291,8 @@ func TestSetCurrentIterationSymbol(t *testing.T) {
 		itr.SetCurrentIterationSymbol(testCase.symbol)
 		message := fmt.Sprintf("Descriptions not equal; expected: %s, got: %s", testCase.symbol, itr.Settings.GetCurrentIterationSymbol())
 
-		assert.Equal(t,
+		assert.Equal(
+			t,
 			testCase.symbol,
 			itr.Settings.GetCurrentIterationSymbol(),
 			message,
@@ -278,7 +314,8 @@ func TestSetRemainingIterationSymbol(t *testing.T) {
 		itr.SetRemainingIterationSymbol(testCase.symbol)
 		message := fmt.Sprintf("Descriptions not equal; expected: %s, got: %s", testCase.symbol, itr.Settings.GetRemainingIterationSymbol())
 
-		assert.Equal(t,
+		assert.Equal(
+			t,
 			testCase.symbol,
 			itr.Settings.GetRemainingIterationSymbol(),
 			message,
@@ -300,7 +337,8 @@ func TestSetLParenSymbol(t *testing.T) {
 		itr.SetLParen(testCase.symbol)
 		message := fmt.Sprintf("Descriptions not equal; expected: %s, got: %s", testCase.symbol, itr.Settings.GetLParen())
 
-		assert.Equal(t,
+		assert.Equal(
+			t,
 			testCase.symbol,
 			itr.Settings.GetLParen(),
 			message,
@@ -322,7 +360,8 @@ func TestSetRParenSymbol(t *testing.T) {
 		itr.SetRParen(testCase.symbol)
 		message := fmt.Sprintf("Descriptions not equal; expected: %s, got: %s", testCase.symbol, itr.Settings.GetRParen())
 
-		assert.Equal(t,
+		assert.Equal(
+			t,
 			testCase.symbol,
 			itr.Settings.GetRParen(),
 			message,

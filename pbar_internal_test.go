@@ -210,48 +210,74 @@ func TestCheckValues(t *testing.T) {
 	}
 }
 
-// func TestProgress(t *testing.T) {
-// 	mockCtrl := gomock.NewController(t)
-// 	defer mockCtrl.Finish()
+func TestProgress(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
 
-// 	mockValues := mocks.NewMockValues()
-// 	testCases := []struct {
-// 		start
-// 		stop
-// 		step
-// 		current
-// 		expectedEndCurrentValue float64
-// 		expectedError    bool
-// 	}{
-// 		{0.0, 5.0, 1.0, 0.0, 2.0, false},
-// 		{0.0, 5.0, 1.0, 4.0, 5.0, false},
-// 		{0.0, 5.0, 1.0, 5.0, 6.0, true},
-// 	}
+	mockClock := mocks.NewMockClock(mockCtrl)
+	mockSettings := mocks.NewMockSettings(mockCtrl)
+	mockWrite := mocks.NewMockWrite(mockCtrl)
+	mockValues := mocks.NewMockValues(mockCtrl)
+	testCases := []struct {
+		startVal    float64
+		stopVal     float64
+		stepVal     float64
+		currentVal  float64
+		lineSize    int
+		numSteps    int
+		barString   string
+		stats       string
+		speedMeter  string
+		expectError bool
+		writeError  error
+	}{
+		{0.0, 5.0, 1.0, 1.0, 10, 2, "|##--------|", "1.0/5.0 20.0%", "[elapsed: 00m:05s, left: 00m:20s, 0.20 iters/sec]", false, nil},
+		{2.0, 5.0, 1.0, 1.0, 10, 2, "", "", "", true, nil},
+		{0.0, 5.0, 1.0, 1.0, 10, 2, "|##--------|", "1.0/5.0 20.0%", "[elapsed: 00m:05s, left: 00m:20s, 0.20 iters/sec]", true, errors.New("An error")},
+	}
 
-// 	for _, testCase := range testCases {
-// 		gomock.InOrder(
-// 			mockValues.EXPECT().GetStart().Return(testCase.start),
-// 			mockValues.EXPECT().GetStop().Return(testCase.stop),
-// 			mockValues.EXPECT().GetStep().Return(testCase.step),
-// 			mockValues.EXPECT().GetCurrent().Return(testCase.current),
-// 		)
+	for _, testCase := range testCases {
+		calls := []*gomock.Call{
+			mockValues.EXPECT().GetStart().Return(testCase.startVal),
+			mockValues.EXPECT().GetStop().Return(testCase.stopVal),
+			mockValues.EXPECT().GetStep().Return(testCase.stepVal),
+			mockValues.EXPECT().GetCurrent().Return(testCase.currentVal),
+			mockSettings.EXPECT().GetLineSize().Return(testCase.lineSize),
+		}
 
-// 		itr := new(Iterator)
-// 		itr.Values =
-// 		itr := Iterator{
-// 			Start:   testCase.start,
-// 			Stop:    testCase.stop,
-// 			Step:    testCase.step,
-// 			Current: testCase.current,
-// 		}
-// 		err := itr.progress()
-// 		if testCase.expectedError {
-// 			assert.Error(t, err, fmt.Sprintf("Expected error not raised!"))
-// 		} else {
-// 			assert.NoError(t, err, fmt.Sprintf("Unexpected error raised!"))
-// 		}
-// 	}
-// }
+		if testCase.currentVal > testCase.startVal && testCase.currentVal < testCase.stopVal {
+			newCalls := []*gomock.Call{
+				mockValues.EXPECT().Statistics(testCase.lineSize).Return(testCase.stats, testCase.numSteps),
+				mockSettings.EXPECT().CreateBarString(testCase.numSteps).Return(testCase.barString),
+				mockClock.EXPECT().CreateSpeedMeter(testCase.startVal, testCase.stopVal, testCase.currentVal).Return(testCase.speedMeter),
+				mockWrite.EXPECT().WriteString(gomock.Any()).Return(testCase.writeError),
+			}
+
+			if testCase.writeError == nil {
+				newCalls = append(newCalls, mockValues.EXPECT().SetCurrent(gomock.Any()))
+			}
+
+			calls = append(calls, newCalls...)
+		}
+
+		gomock.InOrder(calls...)
+
+		itr := &Iterator{
+			Values:   mockValues,
+			Settings: mockSettings,
+			Clock:    mockClock,
+			Write:    mockWrite,
+		}
+
+		err := itr.progress()
+		if testCase.expectError {
+			assert.Error(t, err, fmt.Sprintf("Expected error not raised!"))
+		} else {
+			assert.NoError(t, err, fmt.Sprintf("Unexpected error raised!"))
+		}
+
+	}
+}
 
 func TestCreateIteratorFromValues(t *testing.T) {
 	testCases := []struct {
@@ -376,17 +402,12 @@ func TestFormatProgressBar(t *testing.T) {
 		}
 
 		gomock.InOrder(
-			mockValues.EXPECT().GetStart().Return(testCase.startVal),
-			mockValues.EXPECT().GetStop().Return(testCase.endVal),
-			mockValues.EXPECT().GetCurrent().Return(testCase.currentVal),
-			mockSettings.EXPECT().GetLineSize().Return(testCase.lineSize),
-
 			mockValues.EXPECT().Statistics(testCase.lineSize).Return(testCase.stats, testCase.numSteps),
 			mockSettings.EXPECT().CreateBarString(testCase.numSteps).Return(testCase.barString),
 			mockClock.EXPECT().CreateSpeedMeter(testCase.startVal, testCase.endVal, testCase.currentVal).Return(testCase.speedMeter),
 		)
 
-		output := itr.formatProgressBar()
+		output := itr.formatProgressBar(testCase.startVal, testCase.endVal, testCase.currentVal, testCase.lineSize)
 		message := fmt.Sprintf(
 			"Progress bar incorrect, expected: %s; got %s",
 			testCase.expectedOutput,

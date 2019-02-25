@@ -58,16 +58,38 @@ func TestSubtract(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		c := &render.ClockVal{StartTime: testCase.startTime}
+		c := &render.ClockVal{
+			StartTime:   testCase.startTime,
+			CurrentTime: testCase.inputTime,
+		}
+
 		expectedDuration, err := time.ParseDuration(testCase.duration)
 		if err != nil {
 			t.Errorf("Error parsing duration: %v", err)
 		}
 
-		output := c.Subtract(testCase.inputTime)
+		output := c.Subtract()
 		message := fmt.Sprintf("Subtract output unequal expected: %v; got: %v", expectedDuration, output)
 
 		assert.Equal(t, expectedDuration, output, message)
+	}
+}
+
+func TestNow(t *testing.T) {
+	testCases := []struct {
+		timeVal time.Time
+	}{
+		{time.Now()},
+	}
+
+	for _, testCase := range testCases {
+		render.NowTime = func() time.Time { return testCase.timeVal }
+		c := render.ClockVal{}
+		c.Now()
+
+		message := fmt.Sprintf("Current time incorrect expected: %v; got: %v", testCase.timeVal, c.CurrentTime)
+		assert.Equal(t, testCase.timeVal, c.CurrentTime, message)
+
 	}
 }
 
@@ -79,11 +101,29 @@ func TestStart(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		c := &render.ClockVal{}
-		c.SetStart(testCase.timeVal)
-		message := fmt.Sprintf("Start Time unequal expected: %v; got: %v", testCase.timeVal, c.Start())
+		c := &render.ClockVal{
+			StartTime: testCase.timeVal,
+		}
 
+		message := fmt.Sprintf("Start Time unequal expected: %v; got: %v", testCase.timeVal, c.Start())
 		assert.Equal(t, testCase.timeVal, c.Start(), message)
+	}
+}
+
+func TestSetStartTime(t *testing.T) {
+	testCases := []struct {
+		timeVal time.Time
+	}{
+		{time.Now()},
+	}
+
+	for _, testCase := range testCases {
+		render.NowTime = func() time.Time { return testCase.timeVal }
+		c := &render.ClockVal{}
+		c.SetStartTime()
+
+		message := fmt.Sprintf("Times are not equal expected: %v; got: %v", testCase.timeVal, c.StartTime)
+		assert.Equal(t, testCase.timeVal, c.StartTime, message)
 	}
 }
 
@@ -140,5 +180,35 @@ func TestFormat(t *testing.T) {
 		returnedString := c.Format(testCase.timeValue)
 		message := fmt.Sprintf("Time string incorrect, expected: %v; got: %v", testCase.expectedString, returnedString)
 		assert.Equal(t, testCase.expectedString, returnedString, message)
+	}
+}
+
+func TestCreateSpeedMeter(t *testing.T) {
+	testCases := []struct {
+		start           float64
+		stop            float64
+		current         float64
+		elapsedSecs     int64
+		elapsedNanoSecs int64
+		expectedOutput  string
+	}{
+		{0.0, 5.0, 0.0, 0, 0, "[elapsed: 00m:00s, left: N/A, N/A iters/sec]"},
+		{0.0, 5.0, 1.0, 1, 0, "[elapsed: 00m:01s, left: 00m:04s, 1.00 iters/sec]"},
+	}
+
+	for _, testCase := range testCases {
+		c := render.ClockVal{
+			StartTime:   time.Unix(0, 0),
+			CurrentTime: time.Unix(testCase.elapsedSecs, testCase.elapsedNanoSecs),
+		}
+
+		speedMeter := c.CreateSpeedMeter(testCase.start, testCase.stop, testCase.current)
+
+		assert.Equal(
+			t,
+			testCase.expectedOutput,
+			speedMeter,
+			fmt.Sprintf("Speed Meter Incorrect expected: %v; got: %v", testCase.expectedOutput, speedMeter),
+		)
 	}
 }

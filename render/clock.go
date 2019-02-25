@@ -39,12 +39,14 @@ import (
 	"time"
 )
 
+var NowTime = time.Now
+
 // Clock enables various operations relating to time to be performed
 // easily.
 type Clock interface {
-	Now() time.Time
-	Subtract(time.Time) time.Duration
-	SetStart(time.Time)
+	Now()
+	Subtract() time.Duration
+	SetStartTime()
 	Start() time.Time
 	Seconds(time.Duration) float64
 	Remaining(float64) time.Duration
@@ -57,7 +59,8 @@ type Clock interface {
 // time module. It also contains a start time relating to when the
 // Pbar object was initialized.
 type ClockVal struct {
-	StartTime time.Time
+	StartTime   time.Time
+	CurrentTime time.Time
 }
 
 // NewClock returns an instance of a real-time clock.
@@ -68,20 +71,20 @@ func NewClock() Clock {
 }
 
 // Now returns the current time (from the time module).
-func (c *ClockVal) Now() time.Time {
-	return time.Now()
+func (c *ClockVal) Now() {
+	c.CurrentTime = NowTime()
 }
 
 // Subtract finds the difference between a passed in time
 // and the start time.
-func (c *ClockVal) Subtract(now time.Time) time.Duration {
-	return now.Sub(c.StartTime)
+func (c *ClockVal) Subtract() time.Duration {
+	return c.CurrentTime.Sub(c.StartTime)
 }
 
 // SetStart enables the StartTime value to be set in the clock
 // object.
-func (c *ClockVal) SetStart(t time.Time) {
-	c.StartTime = t
+func (c *ClockVal) SetStartTime() {
+	c.StartTime = NowTime()
 }
 
 // Start returns the StartTime for the clock object
@@ -119,7 +122,7 @@ func (c *ClockVal) Format(d time.Duration) string {
 // iterations per second.
 func (c *ClockVal) CreateSpeedMeter(start, stop, current float64) string {
 	if current > start {
-		elapsed := c.Subtract(c.Now())
+		elapsed := c.Subtract()
 		rate := (current - start) / elapsed.Seconds()
 		remainingTime := c.Remaining(math.Round((stop - current) / rate))
 

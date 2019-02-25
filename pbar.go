@@ -108,7 +108,7 @@ func Pbar(values ...interface{}) (Iterate, error) {
 // enabling output relating to the time taken for
 // iterations within the progress bar.
 func (itr *Iterator) Initialize() error {
-	itr.Clock.SetStart(itr.Clock.Now())
+	itr.Clock.SetStartTime()
 	if err := itr.Update(); err != nil {
 		return err
 	}
@@ -120,6 +120,7 @@ func (itr *Iterator) Initialize() error {
 // be performed at the end of the iteration sequence
 // (i.e. at the end of the for-loop).
 func (itr *Iterator) Update() error {
+	itr.Clock.Now()
 	return itr.progress()
 }
 
@@ -176,21 +177,17 @@ func (itr *Iterator) progress() error {
 	stop := itr.Values.GetStop()
 	step := itr.Values.GetStep()
 	current := itr.Values.GetCurrent()
+	lineSize := itr.Settings.GetLineSize()
 
 	if current < start || current > stop {
 		return fmt.Errorf("Current: %f is incorrect. Start: %f; end: %f", current, start, stop)
 	}
 
-	if err := itr.render(itr.formatProgressBar()); err != nil {
+	if err := itr.render(itr.formatProgressBar(start, stop, current, lineSize)); err != nil {
 		return err
 	}
 
-	newValue := current + step
-	if newValue > stop {
-		return errors.New("Stop Iteration error")
-	}
-
-	itr.Values.SetCurrent(newValue)
+	itr.Values.SetCurrent(current + step)
 
 	return nil
 }
@@ -208,12 +205,7 @@ func (itr *Iterator) render(s string) error {
 // formatProgressBar creates the progress bar to be displayed
 // by the writer. It gathers all the relevant sections from
 // the other functions.
-func (itr *Iterator) formatProgressBar() string {
-	start := itr.Values.GetStart()
-	stop := itr.Values.GetStop()
-	current := itr.Values.GetCurrent()
-	lineSize := itr.Settings.GetLineSize()
-
+func (itr *Iterator) formatProgressBar(start, stop, current float64, lineSize int) string {
 	statistics, numStepsCompleted := itr.Values.Statistics(lineSize)
 	barString := itr.Settings.CreateBarString(numStepsCompleted)
 	speedMeter := itr.Clock.CreateSpeedMeter(start, stop, current)
