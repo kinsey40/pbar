@@ -51,7 +51,7 @@ type Values interface {
 	Statistics(int) (string, int)
 }
 
-// Holds the Start, Stop, Step and Current values
+// Vals holds the Start, Stop, Step and Current values
 type Vals struct {
 	Start   float64
 	Stop    float64

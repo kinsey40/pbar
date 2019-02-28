@@ -67,7 +67,7 @@ type Iterate interface {
 	createIteratorFromValues(...interface{})
 }
 
-// iterator object stores the relevant parameters
+// Iterator object stores the relevant parameters
 // associated with the progress bar, this is returned
 // by the Pbar function.
 type Iterator struct {
@@ -118,11 +118,7 @@ func Pbar(values ...interface{}) (Iterate, error) {
 // iterations within the progress bar.
 func (itr *Iterator) Initialize() error {
 	itr.Clock.SetStartTime()
-	if err := itr.Update(); err != nil {
-		return err
-	}
-
-	return nil
+	return itr.Update()
 }
 
 // Update moves the iteration forward by one step. This should

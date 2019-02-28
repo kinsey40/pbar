@@ -38,6 +38,7 @@ import (
 	"os"
 )
 
+// DefaultWriter is the standard place to write to
 var DefaultWriter = os.Stdout
 
 // Write wraps the WriteString method
@@ -47,7 +48,7 @@ type Write interface {
 	GetWriter() io.Writer
 }
 
-// writing is struct holding an io.Writer
+// Writing is struct holding an io.Writer
 type Writing struct {
 	W io.Writer
 }

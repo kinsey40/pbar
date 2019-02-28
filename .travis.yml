@@ -9,5 +9,5 @@ before_install:
 script:
   - go build ./...
   - ./ci/check_go_fmt.sh
-  - $GOPATH/bin/goveralls -service=travis-ci
+  - $GOPATH/bin/goveralls -v -service=travis-ci -ignore=mocks/clock_mock.go,mocks/settings_mock.go,mocks/values_mock.go,mocks/write_mock.go
     

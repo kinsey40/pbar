@@ -37,14 +37,17 @@ import (
 	"strings"
 )
 
-var DefaultDescription = ""
-var DefaultFinishedIterationSymbol = "#"
-var DefaultCurrentIterationSymbol = "#"
-var DefaultRemainingIterationSymbol = "-"
-var DefaultLParen = "|"
-var DefaultRParen = "|"
-var DefaultMaxLineSize = 80
-var DefaultLineSize = 10
+// The default values for all the parameter settings
+var (
+	DefaultDescription              = ""
+	DefaultFinishedIterationSymbol  = "#"
+	DefaultCurrentIterationSymbol   = "#"
+	DefaultRemainingIterationSymbol = "-"
+	DefaultLParen                   = "|"
+	DefaultRParen                   = "|"
+	DefaultMaxLineSize              = 80
+	DefaultLineSize                 = 10
+)
 
 // Settings enables the setting and getting the setting parameters
 // for the progress bar. It also enables the creation of the bar
@@ -117,7 +120,7 @@ func (s *Set) SetCurrentIterationSymbol(str string) {
 	s.CurrentIterationSymbol = str
 }
 
-// SetRRemainingIterationSymbol sets the RemainingIterationSymbol value
+// SetRemainingIterationSymbol sets the RemainingIterationSymbol value
 func (s *Set) SetRemainingIterationSymbol(str string) {
 	s.RemainingIterationSymbol = str
 }
@@ -141,7 +144,7 @@ func (s *Set) SetLParen(str string) {
 	s.LParen = str
 }
 
-// SetRParem sets the RParen value
+// SetRParen sets the RParen value
 func (s *Set) SetRParen(str string) {
 	s.RParen = str
 }
@@ -186,7 +189,7 @@ func (s *Set) GetRParen() string {
 	return s.RParen
 }
 
-// getBarString creates the actual 'bar' within the progress bar
+// CreateBarString creates the actual 'bar' within the progress bar
 func (s *Set) CreateBarString(numStepsCompleted int) string {
 	var finString string
 	var currString string

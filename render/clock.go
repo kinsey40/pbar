@@ -39,6 +39,7 @@ import (
 	"time"
 )
 
+// NowTime allows us to stub out time.Now() easily
 var NowTime = time.Now
 
 // Clock enables various operations relating to time to be performed
@@ -55,7 +56,7 @@ type Clock interface {
 	CreateSpeedMeter(float64, float64, float64) string
 }
 
-// clock implements a real-time clock by wrapping functions from the
+// ClockVal implements a real-time clock by wrapping functions from the
 // time module. It also contains a start time relating to when the
 // Pbar object was initialized.
 type ClockVal struct {
@@ -81,7 +82,7 @@ func (c *ClockVal) Subtract() time.Duration {
 	return c.CurrentTime.Sub(c.StartTime)
 }
 
-// SetStart enables the StartTime value to be set in the clock
+// SetStartTime enables the StartTime value to be set in the clock
 // object.
 func (c *ClockVal) SetStartTime() {
 	c.StartTime = NowTime()
