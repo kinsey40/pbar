@@ -3,6 +3,7 @@
 [![Build Status](https://travis-ci.com/kinsey40/pbar.svg?branch=master)](https://travis-ci.com/kinsey40/pbar.svg?branch=master)
 [![Go Report Card](https://goreportcard.com/badge/github.com/kinsey40/pbar)](https://goreportcard.com/report/github.com/kinsey40/pbar)
 [![Coverage Status](https://coveralls.io/repos/github/kinsey40/pbar/badge.svg?branch=master)](https://coveralls.io/github/kinsey40/pbar?branch=master)
+[![GoDoc](https://godoc.org/github.com/kinsey40/pbar?status.svg)](https://godoc.org/github.com/kinsey40/pbar)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 Welcome to Pbar! A simple, easy-to-use, flexible progress bar for the Go/Golang programming language! 
