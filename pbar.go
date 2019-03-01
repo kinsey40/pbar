@@ -268,7 +268,7 @@ func convertToFloatValue(value interface{}) float64 {
 
 // isObject examines if the interface values are indeed an Object
 // of the correct type. An error is raised if the values are not
-// all of the same type. A seperate error is raised if the value
+// all of the same type. A separate error is raised if the value
 // is not a valid object or number.
 func isObject(values ...interface{}) (bool, error) {
 	var isObject bool

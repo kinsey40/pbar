@@ -201,6 +201,8 @@ func TestSetMaxLineSize(t *testing.T) {
 		expectedOutput int
 	}{
 		{5, 5},
+		{10, 10},
+		{15, 15},
 	}
 
 	for _, testCase := range testCases {
@@ -319,6 +321,9 @@ func TestGetLineSize(t *testing.T) {
 		input int
 	}{
 		{5},
+		{10},
+		{15},
+		{20},
 	}
 
 	for _, testCase := range testCases {
@@ -336,6 +341,9 @@ func TestGetMaxLineSize(t *testing.T) {
 		input int
 	}{
 		{5},
+		{10},
+		{15},
+		{20},
 	}
 
 	for _, testCase := range testCases {
@@ -395,10 +403,15 @@ func TestCreateBarString(t *testing.T) {
 		expectedOutput           string
 	}{
 		{0, 10, "#", "#", "-", "", "|", "|", "|----------|"},
+		{0, 10, "#", "#", "-", "", "|", "|", "|----------|"},
 		{1, 10, "#", "#", "-", "", "|", "|", "|#---------|"},
+		{1, 10, "=", ">", "-", "", "|", "|", "|>---------|"},
 		{2, 10, "#", "#", "-", "", "|", "|", "|##--------|"},
+		{2, 10, "=", ">", "-", "", "|", "|", "|=>--------|"},
+		{10, 10, "=", ">", "-", "", "|", "|", "|=========>|"},
 		{10, 10, "#", "#", "-", "", "|", "|", "|##########|"},
 		{10, 10, "#", "#", "-", "Hello:", "|", "|", "Hello: |##########|"},
+		{10, 10, "#", "#", "-", "World:", "|", "|", "World: |##########|"},
 	}
 
 	for _, testCase := range testCases {
