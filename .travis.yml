@@ -4,10 +4,15 @@ go:
   - tip
     
 before_install:
+  - go get github.com/modocache/gover
   - go get github.com/mattn/goveralls
   
 script:
   - go build ./...
   - ./ci/check_go_fmt.sh
-  - $GOPATH/bin/goveralls -v -service=travis-ci -ignore=mocks/clock_mock.go,mocks/settings_mock.go,mocks/values_mock.go,mocks/write_mock.go
-    
+  
+  - go test . -v -coverprofile=pbar.coverfile
+  - go test ./render/ -v -coverprofile=render.coverprofile
+  
+  - $GOPATH/bin/gover
+  - $GOPATH/bin/goveralls -coverprofile=gover.coverprofile -service=travis-ci
