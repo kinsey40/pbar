@@ -248,145 +248,190 @@ func TestSetRParen(t *testing.T) {
 	}
 }
 
+func TestSetRetain(t *testing.T) {
+	testCases := []struct {
+		input          bool
+		expectedOutput bool
+	}{
+		{true, true},
+		{false, false},
+	}
+
+	for _, testCase := range testCases {
+		s := &render.Set{}
+		s.SetRetain(testCase.input)
+		message := fmt.Sprintf("RParen incorrectly set expected: %v; got %v", testCase.expectedOutput, s.RParen)
+
+		assert.Equal(t, testCase.expectedOutput, s.Retain, message)
+	}
+}
+
 func TestGetDescription(t *testing.T) {
 	testCases := []struct {
-		input string
+		input          string
+		expectedOutput string
 	}{
-		{"Hello"},
+		{"Hello", "Hello"},
 	}
 
 	for _, testCase := range testCases {
 		s := &render.Set{}
 		s.Description = testCase.input
 		output := s.GetDescription()
-		message := fmt.Sprintf("Description incorrect get expected:%v, got: %v", testCase.input, output)
+		message := fmt.Sprintf("Description incorrect get expected: %v, got: %v", testCase.expectedOutput, output)
 
-		assert.Equal(t, testCase.input, output, message)
+		assert.Equal(t, testCase.expectedOutput, output, message)
 	}
 }
 
 func TestGetFinishedIterationSymbol(t *testing.T) {
 	testCases := []struct {
-		input string
+		input          string
+		expectedOutput string
 	}{
-		{"Hello"},
+		{"Hello", "Hello"},
 	}
 
 	for _, testCase := range testCases {
 		s := &render.Set{}
 		s.FinishedIterationSymbol = testCase.input
 		output := s.GetFinishedIterationSymbol()
-		message := fmt.Sprintf("FinishedIterationSymbol incorrect get expected:%v, got: %v", testCase.input, output)
+		message := fmt.Sprintf("FinishedIterationSymbol incorrect get expected: %v, got: %v", testCase.expectedOutput, output)
 
-		assert.Equal(t, testCase.input, output, message)
+		assert.Equal(t, testCase.expectedOutput, output, message)
 	}
 }
 
 func TestGetCurrentIterationSymbol(t *testing.T) {
 	testCases := []struct {
-		input string
+		input          string
+		expectedOutput string
 	}{
-		{"Hello"},
+		{"Hello", "Hello"},
 	}
 
 	for _, testCase := range testCases {
 		s := &render.Set{}
 		s.CurrentIterationSymbol = testCase.input
 		output := s.GetCurrentIterationSymbol()
-		message := fmt.Sprintf("CurrentIterationSymbol incorrect get expected:%v, got: %v", testCase.input, output)
+		message := fmt.Sprintf("CurrentIterationSymbol incorrect get expected: %v, got: %v", testCase.expectedOutput, output)
 
-		assert.Equal(t, testCase.input, output, message)
+		assert.Equal(t, testCase.expectedOutput, output, message)
 	}
 }
 
 func TestGetRemainingIterationSymbol(t *testing.T) {
 	testCases := []struct {
-		input string
+		input          string
+		expectedOutput string
 	}{
-		{"Hello"},
+		{"Hello", "Hello"},
 	}
 
 	for _, testCase := range testCases {
 		s := &render.Set{}
 		s.RemainingIterationSymbol = testCase.input
 		output := s.GetRemainingIterationSymbol()
-		message := fmt.Sprintf("RemainingIterationSymbol incorrect get expected:%v, got: %v", testCase.input, output)
+		message := fmt.Sprintf("RemainingIterationSymbol incorrect get expected: %v, got: %v", testCase.expectedOutput, output)
 
-		assert.Equal(t, testCase.input, output, message)
+		assert.Equal(t, testCase.expectedOutput, output, message)
 	}
 }
 
 func TestGetLineSize(t *testing.T) {
 	testCases := []struct {
-		input int
+		input          int
+		expectedOutput int
 	}{
-		{5},
-		{10},
-		{15},
-		{20},
+		{5, 5},
+		{10, 10},
+		{15, 15},
+		{20, 20},
 	}
 
 	for _, testCase := range testCases {
 		s := &render.Set{}
 		s.LineSize = testCase.input
 		output := s.GetLineSize()
-		message := fmt.Sprintf("LineSize incorrect get expected:%v, got: %v", testCase.input, output)
+		message := fmt.Sprintf("LineSize incorrect get expected: %v, got: %v", testCase.expectedOutput, output)
 
-		assert.Equal(t, testCase.input, output, message)
+		assert.Equal(t, testCase.expectedOutput, output, message)
 	}
 }
 
 func TestGetMaxLineSize(t *testing.T) {
 	testCases := []struct {
-		input int
+		input          int
+		expectedOutput int
 	}{
-		{5},
-		{10},
-		{15},
-		{20},
+		{5, 5},
+		{10, 10},
+		{15, 15},
+		{20, 20},
 	}
 
 	for _, testCase := range testCases {
 		s := &render.Set{}
 		s.MaxLineSize = testCase.input
 		output := s.GetMaxLineSize()
-		message := fmt.Sprintf("MaxLineSize incorrect get expected:%v, got: %v", testCase.input, output)
+		message := fmt.Sprintf("MaxLineSize incorrect get expected: %v, got: %v", testCase.expectedOutput, output)
 
-		assert.Equal(t, testCase.input, output, message)
+		assert.Equal(t, testCase.expectedOutput, output, message)
 	}
 }
 
 func TestGetLParen(t *testing.T) {
 	testCases := []struct {
-		input string
+		input          string
+		expectedOutput string
 	}{
-		{"Hello"},
+		{"Hello", "Hello"},
 	}
 
 	for _, testCase := range testCases {
 		s := &render.Set{}
 		s.LParen = testCase.input
 		output := s.GetLParen()
-		message := fmt.Sprintf("LParen incorrect get expected:%v, got: %v", testCase.input, output)
+		message := fmt.Sprintf("LParen incorrect get expected: %v, got: %v", testCase.expectedOutput, output)
 
-		assert.Equal(t, testCase.input, output, message)
+		assert.Equal(t, testCase.expectedOutput, output, message)
 	}
 }
 
 func TestGetRParen(t *testing.T) {
 	testCases := []struct {
-		input string
+		input          string
+		expectedOutput string
 	}{
-		{"Hello"},
+		{"Hello", "Hello"},
 	}
 
 	for _, testCase := range testCases {
 		s := &render.Set{}
 		s.RParen = testCase.input
 		output := s.GetRParen()
-		message := fmt.Sprintf("RParen incorrect get expected:%v, got: %v", testCase.input, output)
+		message := fmt.Sprintf("RParen incorrect get expected: %v, got: %v", testCase.expectedOutput, output)
 
-		assert.Equal(t, testCase.input, output, message)
+		assert.Equal(t, testCase.expectedOutput, output, message)
+	}
+}
+
+func TestGetRetain(t *testing.T) {
+	testCases := []struct {
+		input          bool
+		expectedOutput bool
+	}{
+		{true, true},
+		{false, false},
+	}
+
+	for _, testCase := range testCases {
+		s := &render.Set{}
+		s.Retain = testCase.input
+		output := s.GetRetain()
+		message := fmt.Sprintf("Retain incorrect get expected: %v, got: %v", testCase.expectedOutput, output)
+
+		assert.Equal(t, testCase.expectedOutput, output, message)
 	}
 }
 

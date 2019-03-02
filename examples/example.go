@@ -123,14 +123,14 @@ func iterateUsingMap() {
 }
 
 func iterateUsingValues() {
-	p, err := pbar.Pbar(10)
+	p, err := pbar.Pbar(5)
 	if err != nil {
 		panic(err)
 	}
 
 	p.SetDescription("Values")
 	p.Initialize()
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 5; i++ {
 		time.Sleep(time.Second * 1)
 		p.Update()
 	}

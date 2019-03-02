@@ -128,6 +128,18 @@ func (mr *MockSettingsMockRecorder) SetRParen(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetRParen", reflect.TypeOf((*MockSettings)(nil).SetRParen), arg0)
 }
 
+// SetRetain mocks base method
+func (m *MockSettings) SetRetain(arg0 bool) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetRetain", arg0)
+}
+
+// SetRetain indicates an expected call of SetRetain
+func (mr *MockSettingsMockRecorder) SetRetain(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetRetain", reflect.TypeOf((*MockSettings)(nil).SetRetain), arg0)
+}
+
 // GetDescription mocks base method
 func (m *MockSettings) GetDescription() string {
 	m.ctrl.T.Helper()
@@ -238,6 +250,20 @@ func (m *MockSettings) GetRParen() string {
 func (mr *MockSettingsMockRecorder) GetRParen() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRParen", reflect.TypeOf((*MockSettings)(nil).GetRParen))
+}
+
+// GetRetain mocks base method
+func (m *MockSettings) GetRetain() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRetain")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// GetRetain indicates an expected call of GetRetain
+func (mr *MockSettingsMockRecorder) GetRetain() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRetain", reflect.TypeOf((*MockSettings)(nil).GetRetain))
 }
 
 // CreateBarString mocks base method

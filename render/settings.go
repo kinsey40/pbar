@@ -47,6 +47,7 @@ var (
 	DefaultRParen                   = "|"
 	DefaultMaxLineSize              = 80
 	DefaultLineSize                 = 10
+	DefaultRetain                   = true
 )
 
 // Settings enables the setting and getting the setting parameters
@@ -61,6 +62,7 @@ type Settings interface {
 	SetMaxLineSize(int)
 	SetLParen(string)
 	SetRParen(string)
+	SetRetain(bool)
 
 	GetDescription() string
 	GetFinishedIterationSymbol() string
@@ -70,6 +72,7 @@ type Settings interface {
 	GetMaxLineSize() int
 	GetLParen() string
 	GetRParen() string
+	GetRetain() bool
 
 	CreateBarString(int) string
 }
@@ -84,6 +87,7 @@ type Set struct {
 	MaxLineSize              int
 	LParen                   string
 	RParen                   string
+	Retain                   bool
 }
 
 // NewSettings creates a Settings interface
@@ -97,6 +101,7 @@ func NewSettings() Settings {
 	s.MaxLineSize = DefaultMaxLineSize
 	s.LParen = DefaultLParen
 	s.RParen = DefaultRParen
+	s.Retain = DefaultRetain
 
 	return s
 }
@@ -149,6 +154,11 @@ func (s *Set) SetRParen(str string) {
 	s.RParen = str
 }
 
+// SetRetain sets the Retain value
+func (s *Set) SetRetain(value bool) {
+	s.Retain = value
+}
+
 // GetDescription gets the Description value
 func (s *Set) GetDescription() string {
 	return s.Description
@@ -187,6 +197,11 @@ func (s *Set) GetLParen() string {
 // GetRParen gets the RParen value
 func (s *Set) GetRParen() string {
 	return s.RParen
+}
+
+// GetRetain gets the Retain value
+func (s *Set) GetRetain() bool {
+	return s.Retain
 }
 
 // CreateBarString creates the actual 'bar' within the progress bar

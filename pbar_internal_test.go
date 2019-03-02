@@ -225,16 +225,19 @@ func TestProgress(t *testing.T) {
 		currentVal  float64
 		lineSize    int
 		numSteps    int
+		retain      bool
 		barString   string
 		stats       string
 		speedMeter  string
 		expectError bool
 		writeError  error
 	}{
-		{0.0, 10.0, 1.0, 1.0, 10, 1, "|#---------|", "1.0/10.0 10.0%", "[elapsed: 00m:05s, left: 00m:45s, 0.20 iters/sec]", false, nil},
-		{0.0, 5.0, 1.0, 1.0, 10, 2, "|##--------|", "1.0/5.0 20.0%", "[elapsed: 00m:05s, left: 00m:20s, 0.20 iters/sec]", false, nil},
-		{2.0, 5.0, 1.0, 1.0, 10, 2, "", "", "", true, nil},
-		{0.0, 5.0, 1.0, 1.0, 10, 2, "|##--------|", "1.0/5.0 20.0%", "[elapsed: 00m:05s, left: 00m:20s, 0.20 iters/sec]", true, errors.New("An error")},
+		{0.0, 10.0, 1.0, 1.0, 10, 1, true, "|#---------|", "1.0/10.0 10.0%", "[elapsed: 00m:05s, left: 00m:45s, 0.20 iters/sec]", false, nil},
+		{0.0, 5.0, 1.0, 1.0, 10, 2, true, "|##--------|", "1.0/5.0 20.0%", "[elapsed: 00m:05s, left: 00m:20s, 0.20 iters/sec]", false, nil},
+		{2.0, 5.0, 1.0, 1.0, 10, 2, true, "", "", "", true, nil},
+		{0.0, 5.0, 1.0, 1.0, 10, 2, true, "|##--------|", "1.0/5.0 20.0%", "[elapsed: 00m:05s, left: 00m:20s, 0.20 iters/sec]", true, errors.New("An error")},
+		{0.0, 5.0, 1.0, 5.0, 10, 2, true, "|##########|", "5.0/5.0 100.0%", "[elapsed: 00m:05s, left: 00m:00s, 1.00 iters/sec]", true, errors.New("An error")},
+		{0.0, 5.0, 1.0, 5.0, 10, 2, false, "|##########|", "5.0/5.0 100.0%", "[elapsed: 00m:05s, left: 00m:00s, 1.00 iters/sec]", true, errors.New("An error")},
 	}
 
 	for _, testCase := range testCases {
@@ -246,19 +249,22 @@ func TestProgress(t *testing.T) {
 			mockSettings.EXPECT().GetLineSize().Return(testCase.lineSize),
 		}
 
-		if testCase.currentVal > testCase.startVal && testCase.currentVal < testCase.stopVal {
-			newCalls := []*gomock.Call{
-				mockValues.EXPECT().Statistics(testCase.lineSize).Return(testCase.stats, testCase.numSteps),
-				mockSettings.EXPECT().CreateBarString(testCase.numSteps).Return(testCase.barString),
-				mockClock.EXPECT().CreateSpeedMeter(testCase.startVal, testCase.stopVal, testCase.currentVal).Return(testCase.speedMeter),
-				mockWrite.EXPECT().WriteString(gomock.Any()).Return(testCase.writeError),
+		if testCase.currentVal > testCase.startVal && testCase.currentVal <= testCase.stopVal {
+			calls = append(calls, mockValues.EXPECT().Statistics(testCase.lineSize).Return(testCase.stats, testCase.numSteps))
+			calls = append(calls, mockSettings.EXPECT().CreateBarString(testCase.numSteps).Return(testCase.barString))
+			calls = append(calls, mockClock.EXPECT().CreateSpeedMeter(testCase.startVal, testCase.stopVal, testCase.currentVal).Return(testCase.speedMeter))
+
+			if testCase.currentVal == testCase.stopVal {
+				calls = append(calls, mockWrite.EXPECT().WriteString(gomock.Any()).Return(nil))
+				calls = append(calls, mockSettings.EXPECT().GetRetain().Return(testCase.retain))
+				calls = append(calls, mockWrite.EXPECT().WriteString(gomock.Any()).Return(testCase.writeError))
+			} else {
+				calls = append(calls, mockWrite.EXPECT().WriteString(gomock.Any()).Return(testCase.writeError))
 			}
 
 			if testCase.writeError == nil {
-				newCalls = append(newCalls, mockValues.EXPECT().SetCurrent(gomock.Any()))
+				calls = append(calls, mockValues.EXPECT().SetCurrent(gomock.Any()))
 			}
-
-			calls = append(calls, newCalls...)
 		}
 
 		gomock.InOrder(calls...)
@@ -393,6 +399,7 @@ func TestFormatProgressBar(t *testing.T) {
 		expectedOutput string
 	}{
 		{0.0, 1.0, 5.0, 10, 1, "|##--------|", "1.0/5.0 20.0%", "[elapsed: 00m:05s, left: 00m:20s, 0.20 iters/sec]", "|##--------| 1.0/5.0 20.0% [elapsed: 00m:05s, left: 00m:20s, 0.20 iters/sec]"},
+		{0.0, 5.0, 5.0, 10, 1, "|##########|", "5.0/5.0 100.0%", "[elapsed: 00m:05s, left: 00m:00s, 1.00 iters/sec]", "|##########| 5.0/5.0 100.0% [elapsed: 00m:05s, left: 00m:00s, 1.00 iters/sec]"},
 	}
 
 	for _, testCase := range testCases {
@@ -440,13 +447,13 @@ func TestRenderError(t *testing.T) {
 		if testCase.expectedError {
 			mockWrite.EXPECT().WriteString(gomock.Any()).Return(errors.New("An error"))
 			err := itr.render(testCase.input)
-			message := fmt.Sprintf("")
+			message := fmt.Sprintf("Expected Error not raised!")
 
 			assert.Error(t, err, message)
 		} else {
 			mockWrite.EXPECT().WriteString(gomock.Any()).Return(nil)
 			err := itr.render(testCase.input)
-			message := fmt.Sprintf("")
+			message := fmt.Sprintf("Unexpected Error raised: %v", err)
 
 			assert.NoError(t, err, message)
 		}

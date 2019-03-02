@@ -128,6 +128,7 @@ func TestUpdate(t *testing.T) {
 		maxLineSize              int
 		lParen                   string
 		rParen                   string
+		retain                   bool
 		elapsedSecs              int64
 		elapsedNanoSecs          int64
 		buffer                   *bytes.Buffer
@@ -135,11 +136,12 @@ func TestUpdate(t *testing.T) {
 		expectedEndCurrentVal    float64
 		expectedOutput           string
 	}{
-		{0.0, 5.0, 1.0, 0.0, "", "#", "#", "-", 10, 80, "|", "|", 0, 0, new(bytes.Buffer), false, 1.0, "\r|----------| 0.0/5.0 0.0% [elapsed: 00m:00s, left: N/A, N/A iters/sec]"},
-		{0.0, 5.0, 1.0, 1.0, "", "#", "#", "-", 10, 80, "|", "|", 2, 0, new(bytes.Buffer), false, 2.0, "\r|##--------| 1.0/5.0 20.0% [elapsed: 00m:02s, left: 00m:08s, 0.50 iters/sec]"},
-		{0.0, 5.0, 1.0, 5.0, "", "#", "#", "-", 10, 80, "|", "|", 4, 0, new(bytes.Buffer), false, 6.0, "\r|##########| 5.0/5.0 100.0% [elapsed: 00m:04s, left: 00m:00s, 1.25 iters/sec]\n"},
-		{1.0, 5.0, 1.0, 0.0, "", "#", "#", "-", 10, 80, "|", "|", 0, 0, new(bytes.Buffer), true, 1.0, ""},
-		{1.0, 5.0, 1.0, 6.0, "", "#", "#", "-", 10, 80, "|", "|", 0, 0, new(bytes.Buffer), true, 1.0, ""},
+		{0.0, 5.0, 1.0, 0.0, "", "#", "#", "-", 10, 80, "|", "|", true, 0, 0, new(bytes.Buffer), false, 1.0, "\r|----------| 0.0/5.0 0.0% [elapsed: 00m:00s, left: N/A, N/A iters/sec]"},
+		{0.0, 5.0, 1.0, 1.0, "", "#", "#", "-", 10, 80, "|", "|", true, 2, 0, new(bytes.Buffer), false, 2.0, "\r|##--------| 1.0/5.0 20.0% [elapsed: 00m:02s, left: 00m:08s, 0.50 iters/sec]"},
+		{0.0, 5.0, 1.0, 5.0, "", "#", "#", "-", 10, 80, "|", "|", true, 4, 0, new(bytes.Buffer), false, 6.0, "\r|##########| 5.0/5.0 100.0% [elapsed: 00m:04s, left: 00m:00s, 1.25 iters/sec]\r\n"},
+		{0.0, 5.0, 1.0, 5.0, "", "#", "#", "-", 10, 80, "|", "|", false, 4, 0, new(bytes.Buffer), false, 6.0, "\r|##########| 5.0/5.0 100.0% [elapsed: 00m:04s, left: 00m:00s, 1.25 iters/sec]\r\r                                                                             "},
+		{1.0, 5.0, 1.0, 0.0, "", "#", "#", "-", 10, 80, "|", "|", true, 0, 0, new(bytes.Buffer), true, 1.0, ""},
+		{1.0, 5.0, 1.0, 6.0, "", "#", "#", "-", 10, 80, "|", "|", true, 0, 0, new(bytes.Buffer), true, 1.0, ""},
 	}
 
 	for _, testCase := range testCases {
@@ -168,6 +170,7 @@ func TestUpdate(t *testing.T) {
 			MaxLineSize:              testCase.maxLineSize,
 			LParen:                   testCase.lParen,
 			RParen:                   testCase.rParen,
+			Retain:                   testCase.retain,
 		}
 
 		itr := pbar.Iterator{
@@ -266,7 +269,7 @@ func TestSetFinishedIterationSymbol(t *testing.T) {
 	for _, testCase := range testCases {
 		itr.Settings = &render.Set{}
 		itr.SetFinishedIterationSymbol(testCase.symbol)
-		message := fmt.Sprintf("Descriptions not equal; expected: %s, got: %s", testCase.symbol, itr.Settings.GetFinishedIterationSymbol())
+		message := fmt.Sprintf("FinishedIterationSymbols not equal; expected: %s, got: %s", testCase.symbol, itr.Settings.GetFinishedIterationSymbol())
 
 		assert.Equal(
 			t,
@@ -289,7 +292,7 @@ func TestSetCurrentIterationSymbol(t *testing.T) {
 	for _, testCase := range testCases {
 		itr.Settings = &render.Set{}
 		itr.SetCurrentIterationSymbol(testCase.symbol)
-		message := fmt.Sprintf("Descriptions not equal; expected: %s, got: %s", testCase.symbol, itr.Settings.GetCurrentIterationSymbol())
+		message := fmt.Sprintf("CurrentInterationSymbols not equal; expected: %s, got: %s", testCase.symbol, itr.Settings.GetCurrentIterationSymbol())
 
 		assert.Equal(
 			t,
@@ -312,7 +315,7 @@ func TestSetRemainingIterationSymbol(t *testing.T) {
 	for _, testCase := range testCases {
 		itr.Settings = &render.Set{}
 		itr.SetRemainingIterationSymbol(testCase.symbol)
-		message := fmt.Sprintf("Descriptions not equal; expected: %s, got: %s", testCase.symbol, itr.Settings.GetRemainingIterationSymbol())
+		message := fmt.Sprintf("RemainingIterationSymbols not equal; expected: %s, got: %s", testCase.symbol, itr.Settings.GetRemainingIterationSymbol())
 
 		assert.Equal(
 			t,
@@ -335,7 +338,7 @@ func TestSetLParenSymbol(t *testing.T) {
 	for _, testCase := range testCases {
 		itr.Settings = &render.Set{}
 		itr.SetLParen(testCase.symbol)
-		message := fmt.Sprintf("Descriptions not equal; expected: %s, got: %s", testCase.symbol, itr.Settings.GetLParen())
+		message := fmt.Sprintf("LParens not equal; expected: %s, got: %s", testCase.symbol, itr.Settings.GetLParen())
 
 		assert.Equal(
 			t,
@@ -358,12 +361,35 @@ func TestSetRParenSymbol(t *testing.T) {
 	for _, testCase := range testCases {
 		itr.Settings = &render.Set{}
 		itr.SetRParen(testCase.symbol)
-		message := fmt.Sprintf("Descriptions not equal; expected: %s, got: %s", testCase.symbol, itr.Settings.GetRParen())
+		message := fmt.Sprintf("RParens not equal; expected: %s, got: %s", testCase.symbol, itr.Settings.GetRParen())
 
 		assert.Equal(
 			t,
 			testCase.symbol,
 			itr.Settings.GetRParen(),
+			message,
+		)
+	}
+}
+
+func TestSetRetain(t *testing.T) {
+	itr := &pbar.Iterator{}
+	testCases := []struct {
+		value bool
+	}{
+		{true},
+		{false},
+	}
+
+	for _, testCase := range testCases {
+		itr.Settings = &render.Set{}
+		itr.SetRetain(testCase.value)
+		message := fmt.Sprintf("Retains not equal; expected: %v, got: %v", testCase.value, itr.Settings.GetRetain())
+
+		assert.Equal(
+			t,
+			testCase.value,
+			itr.Settings.GetRetain(),
 			message,
 		)
 	}

@@ -61,6 +61,7 @@ type Iterate interface {
 	SetRemainingIterationSymbol(string)
 	SetLParen(string)
 	SetRParen(string)
+	SetRetain(bool)
 
 	progress() error
 	createIteratorFromObject(interface{})
@@ -175,6 +176,13 @@ func (itr *Iterator) SetRParen(newSymbol string) {
 	itr.Settings.SetRParen(newSymbol)
 }
 
+// SetRetain sets whether to clear the progress bar
+// from the writer (false) or not (true)
+// Default Value: true
+func (itr *Iterator) SetRetain(value bool) {
+	itr.Settings.SetRetain(value)
+}
+
 // progress moves the iteration sequence forward by altering the
 // CurrentValue inside the iterator object
 func (itr *Iterator) progress() error {
@@ -188,8 +196,21 @@ func (itr *Iterator) progress() error {
 		return fmt.Errorf("Current: %f is incorrect. Start: %f; end: %f", current, start, stop)
 	}
 
-	if err := itr.render(itr.formatProgressBar(start, stop, current, lineSize)); err != nil {
+	bar := itr.formatProgressBar(start, stop, current, lineSize)
+	if err := itr.render(bar); err != nil {
 		return err
+	}
+
+	if current == stop {
+		if !itr.Settings.GetRetain() {
+			if err := itr.render(fmt.Sprintf("\r%s", strings.Repeat(" ", len(bar)))); err != nil {
+				return err
+			}
+		} else {
+			if err := itr.render(fmt.Sprintf("\n")); err != nil {
+				return err
+			}
+		}
 	}
 
 	itr.Values.SetCurrent(current + step)
@@ -215,10 +236,6 @@ func (itr *Iterator) formatProgressBar(start, stop, current float64, lineSize in
 	barString := itr.Settings.CreateBarString(numStepsCompleted)
 	speedMeter := itr.Clock.CreateSpeedMeter(start, stop, current)
 	progressBar := strings.Join([]string{barString, statistics, speedMeter}, " ")
-
-	if current == stop {
-		progressBar += "\n"
-	}
 
 	return progressBar
 }
