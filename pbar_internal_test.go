@@ -231,6 +231,7 @@ func TestProgress(t *testing.T) {
 		expectError bool
 		writeError  error
 	}{
+		{0.0, 10.0, 1.0, 1.0, 10, 1, "|#---------|", "1.0/10.0 10.0%", "[elapsed: 00m:05s, left: 00m:45s, 0.20 iters/sec]", false, nil},
 		{0.0, 5.0, 1.0, 1.0, 10, 2, "|##--------|", "1.0/5.0 20.0%", "[elapsed: 00m:05s, left: 00m:20s, 0.20 iters/sec]", false, nil},
 		{2.0, 5.0, 1.0, 1.0, 10, 2, "", "", "", true, nil},
 		{0.0, 5.0, 1.0, 1.0, 10, 2, "|##--------|", "1.0/5.0 20.0%", "[elapsed: 00m:05s, left: 00m:20s, 0.20 iters/sec]", true, errors.New("An error")},
