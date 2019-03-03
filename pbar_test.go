@@ -394,3 +394,40 @@ func TestSetRetain(t *testing.T) {
 		)
 	}
 }
+
+func TestSetEqualTo(t *testing.T) {
+	itr := &pbar.Iterator{}
+	testCases := []struct {
+		start        float64
+		step         float64
+		stop         float64
+		isObject     bool
+		expectedStop float64
+		expectPanic  bool
+	}{
+		{0.0, 1.0, 5.0, false, 6.0, false},
+		{0.0, 1.0, 5.0, true, 6.0, true},
+	}
+
+	for _, testCase := range testCases {
+		itr.Values = &render.Vals{
+			Start:    testCase.start,
+			Stop:     testCase.stop,
+			Step:     testCase.step,
+			IsObject: testCase.isObject,
+		}
+
+		if testCase.expectPanic {
+			assert.Panics(t, func() { itr.SetEqualTo() }, fmt.Sprintf("Panic not raised!"))
+		} else {
+			assert.NotPanics(t, func() { itr.SetEqualTo() }, fmt.Sprintf("Unexpected Panic"))
+			assert.Equal(
+				t,
+				testCase.expectedStop,
+				itr.Values.GetStop(),
+				fmt.Sprintf("Stop value incorrect expected: %v; got: %v", testCase.expectedStop, itr.Values.GetStop()),
+			)
+		}
+
+	}
+}

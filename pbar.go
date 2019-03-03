@@ -62,6 +62,7 @@ type Iterate interface {
 	SetLParen(string)
 	SetRParen(string)
 	SetRetain(bool)
+	SetEqualTo()
 
 	progress() error
 	createIteratorFromObject(interface{})
@@ -183,6 +184,17 @@ func (itr *Iterator) SetRetain(value bool) {
 	itr.Settings.SetRetain(value)
 }
 
+// SetEqualTo adds an extra step to the stop value
+// This is to be used when the for loop uses an 'equals' value
+// for the upper limit
+func (itr *Iterator) SetEqualTo() {
+	if itr.Values.GetIsObject() {
+		panic("Cannot use Equal To when creating Pbar from an Object!")
+	}
+
+	itr.Values.SetStop(itr.Values.GetStop() + itr.Values.GetStep())
+}
+
 // progress moves the iteration sequence forward by altering the
 // CurrentValue inside the iterator object
 func (itr *Iterator) progress() error {
@@ -247,13 +259,13 @@ func (itr *Iterator) createIteratorFromObject(object interface{}) {
 	itr.Values.SetStop(float64(reflect.ValueOf(object).Len()))
 	itr.Values.SetStep(1.0)
 	itr.Values.SetCurrent(0.0)
+	itr.Values.SetIsObject(true)
 }
 
 // createIteratorFromValues creates an iterator object from a list of numerical
 // values.
 func (itr *Iterator) createIteratorFromValues(values ...interface{}) {
 	floatValues := make([]float64, 0)
-
 	for _, value := range values {
 		floatValues = append(floatValues, convertToFloatValue(value))
 	}
@@ -273,6 +285,8 @@ func (itr *Iterator) createIteratorFromValues(values ...interface{}) {
 		itr.Values.SetStop(floatValues[1])
 		itr.Values.SetStep(floatValues[2])
 	}
+
+	itr.Values.SetIsObject(false)
 }
 
 // convertToFloatValue converts an interface to a float using

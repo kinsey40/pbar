@@ -42,21 +42,24 @@ type Values interface {
 	SetStop(float64)
 	SetStep(float64)
 	SetCurrent(float64)
+	SetIsObject(bool)
 
 	GetStart() float64
 	GetStop() float64
 	GetStep() float64
 	GetCurrent() float64
+	GetIsObject() bool
 
 	Statistics(int) (string, int)
 }
 
 // Vals holds the Start, Stop, Step and Current values
 type Vals struct {
-	Start   float64
-	Stop    float64
-	Step    float64
-	Current float64
+	Start    float64
+	Stop     float64
+	Step     float64
+	Current  float64
+	IsObject bool
 }
 
 // NewValues generates a NewValues interface
@@ -86,6 +89,11 @@ func (v *Vals) SetCurrent(s float64) {
 	v.Current = s
 }
 
+// SetIsObject sets the IsObject value
+func (v *Vals) SetIsObject(value bool) {
+	v.IsObject = value
+}
+
 // GetStart gets the Start value
 func (v *Vals) GetStart() float64 {
 	return v.Start
@@ -104,6 +112,11 @@ func (v *Vals) GetStep() float64 {
 // GetCurrent gets the Current value
 func (v *Vals) GetCurrent() float64 {
 	return v.Current
+}
+
+// GetIsObject gets the IsObject value
+func (v *Vals) GetIsObject() bool {
+	return v.IsObject
 }
 
 // Statistics calculates all the numerical values relating to the

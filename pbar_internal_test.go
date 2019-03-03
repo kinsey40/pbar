@@ -331,6 +331,12 @@ func TestCreateIteratorFromValues(t *testing.T) {
 			itr.Values.GetCurrent(),
 			fmt.Sprintf("Current Value incorrect expected: %f; got: %f", testCase.expectedCurrent, itr.Values.GetCurrent()),
 		)
+
+		assert.False(
+			t,
+			itr.Values.GetIsObject(),
+			fmt.Sprintf("IsObject Value incorrect expected: %v; got: %v", false, itr.Values.GetIsObject()),
+		)
 	}
 }
 
@@ -376,6 +382,12 @@ func TestCreateIteratorFromObject(t *testing.T) {
 			testCase.expectedCurrent,
 			itr.Values.GetCurrent(),
 			fmt.Sprintf("Current Value incorrect expected: %f; got: %f", testCase.expectedCurrent, itr.Values.GetCurrent()),
+		)
+
+		assert.True(
+			t,
+			itr.Values.GetIsObject(),
+			fmt.Sprintf("IsObject Value incorrect expected: %v; got: %v", true, itr.Values.GetIsObject()),
 		)
 	}
 }

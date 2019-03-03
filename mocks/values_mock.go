@@ -80,6 +80,18 @@ func (mr *MockValuesMockRecorder) SetCurrent(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetCurrent", reflect.TypeOf((*MockValues)(nil).SetCurrent), arg0)
 }
 
+// SetIsObject mocks base method
+func (m *MockValues) SetIsObject(arg0 bool) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetIsObject", arg0)
+}
+
+// SetIsObject indicates an expected call of SetIsObject
+func (mr *MockValuesMockRecorder) SetIsObject(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetIsObject", reflect.TypeOf((*MockValues)(nil).SetIsObject), arg0)
+}
+
 // GetStart mocks base method
 func (m *MockValues) GetStart() float64 {
 	m.ctrl.T.Helper()
@@ -134,6 +146,20 @@ func (m *MockValues) GetCurrent() float64 {
 func (mr *MockValuesMockRecorder) GetCurrent() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurrent", reflect.TypeOf((*MockValues)(nil).GetCurrent))
+}
+
+// GetIsObject mocks base method
+func (m *MockValues) GetIsObject() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetIsObject")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// GetIsObject indicates an expected call of GetIsObject
+func (mr *MockValuesMockRecorder) GetIsObject() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIsObject", reflect.TypeOf((*MockValues)(nil).GetIsObject))
 }
 
 // Statistics mocks base method

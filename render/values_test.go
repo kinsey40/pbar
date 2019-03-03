@@ -116,6 +116,23 @@ func TestSetCurrent(t *testing.T) {
 	}
 }
 
+func TestSetIsObject(t *testing.T) {
+	testCases := []struct {
+		input bool
+	}{
+		{false},
+		{true},
+	}
+
+	for _, testCase := range testCases {
+		v := &render.Vals{}
+		v.SetIsObject(testCase.input)
+		message := fmt.Sprintf("Set IsObject incorrect expected: %v; got: %v", testCase.input, v.IsObject)
+
+		assert.Equal(t, testCase.input, v.IsObject, message)
+	}
+}
+
 func TestGetStart(t *testing.T) {
 	testCases := []struct {
 		input float64
@@ -183,6 +200,25 @@ func TestGetCurrent(t *testing.T) {
 		}
 		output := v.GetCurrent()
 		message := fmt.Sprintf("Get Current incorrect expected: %v; got: %v", testCase.input, output)
+
+		assert.Equal(t, testCase.input, output, message)
+	}
+}
+
+func TestGetIsObject(t *testing.T) {
+	testCases := []struct {
+		input bool
+	}{
+		{false},
+		{true},
+	}
+
+	for _, testCase := range testCases {
+		v := &render.Vals{
+			IsObject: testCase.input,
+		}
+		output := v.GetIsObject()
+		message := fmt.Sprintf("Get IsObject incorrect expected: %v; got: %v", testCase.input, output)
 
 		assert.Equal(t, testCase.input, output, message)
 	}
