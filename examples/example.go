@@ -31,6 +31,10 @@
  * Note that this file does not contain functionality present within the Pbar
  * module and is included for user convience.
  *
+ * Depending on the desired behaviour, the user can check the errors individually
+ * outputted by the pbar operations. Alternatively, as Pbar is generally not used
+ * as the main part of an application, errors can be left to silently fail.
+ *
  */
 
 package main
@@ -41,6 +45,7 @@ import (
 	"github.com/kinsey40/pbar"
 )
 
+// Create a Pbar object for iteration over an array
 func iterateUsingArray() {
 	x := [5]int{1, 2, 3, 4, 5}
 	p, err := pbar.Pbar(x)
@@ -56,6 +61,7 @@ func iterateUsingArray() {
 	}
 }
 
+// Create a Pbar object for iteration over a string
 func iterateUsingString() {
 	x := "abcde"
 	p, err := pbar.Pbar(x)
@@ -71,6 +77,7 @@ func iterateUsingString() {
 	}
 }
 
+// Create a Pbar object for iteration over a slice
 func iterateUsingSlice() {
 	x := []int{1, 2, 3, 4, 5}
 	p, err := pbar.Pbar(x)
@@ -86,6 +93,7 @@ func iterateUsingSlice() {
 	}
 }
 
+// Create a Pbar object for iteration over a buffered channel
 func iterateUsingChannel() {
 	size := 5
 	x := make(chan int, size)
@@ -107,6 +115,7 @@ func iterateUsingChannel() {
 	}
 }
 
+// Create a Pbar object for iteration over a map
 func iterateUsingMap() {
 	x := map[string]string{"1": "a", "2": "b", "3": "c", "4": "d", "5": "e"}
 	p, err := pbar.Pbar(x)
@@ -122,6 +131,7 @@ func iterateUsingMap() {
 	}
 }
 
+// Create a Pbar object for iteration over values
 func iterateUsingValues() {
 	p, err := pbar.Pbar(5)
 	if err != nil {

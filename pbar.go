@@ -134,6 +134,7 @@ func (itr *Iterator) Update() error {
 // SetDescription sets the Description parameter, which causes the Pbar
 // to output a String at the start of the progress bar, effectively
 // enabling the progress bars to be named within the output.
+//
 // Default Value: ""
 func (itr *Iterator) SetDescription(descrip string) {
 	itr.Settings.SetDescription(descrip)
@@ -142,6 +143,7 @@ func (itr *Iterator) SetDescription(descrip string) {
 // SetFinishedIterationSymbol sets the FinishedIterationSymbol, which
 // is the symbol within the progress bar that shows that particular
 // iteration has completed it's execution.
+//
 // Default Value: "#"
 func (itr *Iterator) SetFinishedIterationSymbol(newSymbol string) {
 	itr.Settings.SetFinishedIterationSymbol(newSymbol)
@@ -150,6 +152,7 @@ func (itr *Iterator) SetFinishedIterationSymbol(newSymbol string) {
 // SetCurrentIterationSymbol sets the CurrentIterationSymbol, which
 // is the symbol within the progress bar that shows the iteration
 // which is currently being executed.
+//
 // Default Value: "#"
 func (itr *Iterator) SetCurrentIterationSymbol(newSymbol string) {
 	itr.Settings.SetCurrentIterationSymbol(newSymbol)
@@ -158,6 +161,7 @@ func (itr *Iterator) SetCurrentIterationSymbol(newSymbol string) {
 // SetRemainingIterationSymbol sets the RemainingIterationSymbol, which
 // is the symbol within the progress bar that shows that particular
 // iteration has not yet completed it's execution.
+//
 // Default Value: "-"
 func (itr *Iterator) SetRemainingIterationSymbol(newSymbol string) {
 	itr.Settings.SetRemainingIterationSymbol(newSymbol)
@@ -165,6 +169,7 @@ func (itr *Iterator) SetRemainingIterationSymbol(newSymbol string) {
 
 // SetLParen sets the symbol to be used to show the start
 // of the progress bar.
+//
 // Default Value: "|"
 func (itr *Iterator) SetLParen(newSymbol string) {
 	itr.Settings.SetLParen(newSymbol)
@@ -172,6 +177,7 @@ func (itr *Iterator) SetLParen(newSymbol string) {
 
 // SetRParen sets the symbol to be used to show the end
 // of the progress bar.
+//
 // Default Value: "|"
 func (itr *Iterator) SetRParen(newSymbol string) {
 	itr.Settings.SetRParen(newSymbol)
@@ -179,6 +185,7 @@ func (itr *Iterator) SetRParen(newSymbol string) {
 
 // SetRetain sets whether to clear the progress bar
 // from the writer (false) or not (true)
+//
 // Default Value: true
 func (itr *Iterator) SetRetain(value bool) {
 	itr.Settings.SetRetain(value)
