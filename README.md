@@ -41,6 +41,14 @@ Generally, the object is first created via the function ```Pbar```. This can be 
 
 Hence, the Update function must be at the bottom of the for-loop. 
 
+## Known Issues
+Currently, there are two main issues relating to pbar. Firstly, pbar cannot run multiple progress bars ssimultaneously. 
+Secondly, pbar has not been checked to work correctly on Windows OS; this may present problems due to pbars reliant on line 
+ending functionality. 
+
+* Multiple Progress Bars
+* Windows OS
+
 ## Contributing
 All Contributions to improving this project are welcome! Please examine the Contributing file for instructions on how to contribute. 
 
