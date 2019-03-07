@@ -225,19 +225,19 @@ func TestProgress(t *testing.T) {
 		currentVal  float64
 		lineSize    int
 		numSteps    int
-		retain      bool
+		suffix      string
 		barString   string
 		stats       string
 		speedMeter  string
 		expectError bool
 		writeError  error
 	}{
-		{0.0, 10.0, 1.0, 1.0, 10, 1, true, "|#---------|", "1.0/10.0 10.0%", "[elapsed: 00m:05s, left: 00m:45s, 0.20 iters/sec]", false, nil},
-		{0.0, 5.0, 1.0, 1.0, 10, 2, true, "|##--------|", "1.0/5.0 20.0%", "[elapsed: 00m:05s, left: 00m:20s, 0.20 iters/sec]", false, nil},
-		{2.0, 5.0, 1.0, 1.0, 10, 2, true, "", "", "", true, nil},
-		{0.0, 5.0, 1.0, 1.0, 10, 2, true, "|##--------|", "1.0/5.0 20.0%", "[elapsed: 00m:05s, left: 00m:20s, 0.20 iters/sec]", true, errors.New("An error")},
-		{0.0, 5.0, 1.0, 5.0, 10, 2, true, "|##########|", "5.0/5.0 100.0%", "[elapsed: 00m:05s, left: 00m:00s, 1.00 iters/sec]", true, errors.New("An error")},
-		{0.0, 5.0, 1.0, 5.0, 10, 2, false, "|##########|", "5.0/5.0 100.0%", "[elapsed: 00m:05s, left: 00m:00s, 1.00 iters/sec]", true, errors.New("An error")},
+		{0.0, 10.0, 1.0, 1.0, 10, 1, "\n", "|#---------|", "1.0/10.0 10.0%", "[elapsed: 00m:05s, left: 00m:45s, 0.20 iters/sec]", false, nil},
+		{0.0, 5.0, 1.0, 1.0, 10, 2, "\n", "|##--------|", "1.0/5.0 20.0%", "[elapsed: 00m:05s, left: 00m:20s, 0.20 iters/sec]", false, nil},
+		{2.0, 5.0, 1.0, 1.0, 10, 2, "\n", "", "", "", true, nil},
+		{0.0, 5.0, 1.0, 1.0, 10, 2, "\n", "|##--------|", "1.0/5.0 20.0%", "[elapsed: 00m:05s, left: 00m:20s, 0.20 iters/sec]", true, errors.New("An error")},
+		{0.0, 5.0, 1.0, 5.0, 10, 2, "\n", "|##########|", "5.0/5.0 100.0%", "[elapsed: 00m:05s, left: 00m:00s, 1.00 iters/sec]", true, errors.New("An error")},
+		{0.0, 5.0, 1.0, 5.0, 10, 2, "\r\033[K", "|##########|", "5.0/5.0 100.0%", "[elapsed: 00m:05s, left: 00m:00s, 1.00 iters/sec]", true, errors.New("An error")},
 	}
 
 	for _, testCase := range testCases {
@@ -256,7 +256,7 @@ func TestProgress(t *testing.T) {
 
 			if testCase.currentVal == testCase.stopVal {
 				calls = append(calls, mockWrite.EXPECT().WriteString(gomock.Any()).Return(nil))
-				calls = append(calls, mockSettings.EXPECT().GetRetain().Return(testCase.retain))
+				calls = append(calls, mockSettings.EXPECT().GetSuffix().Return(testCase.suffix))
 				calls = append(calls, mockWrite.EXPECT().WriteString(gomock.Any()).Return(testCase.writeError))
 			} else {
 				calls = append(calls, mockWrite.EXPECT().WriteString(gomock.Any()).Return(testCase.writeError))

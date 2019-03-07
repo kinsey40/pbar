@@ -63,6 +63,8 @@ type Iterate interface {
 	SetRParen(string)
 	SetRetain(bool)
 	SetEqualTo()
+	Multi()
+	MultiEnd()
 
 	progress() error
 	createIteratorFromObject(interface{})
@@ -188,7 +190,11 @@ func (itr *Iterator) SetRParen(newSymbol string) {
 //
 // Default Value: true
 func (itr *Iterator) SetRetain(value bool) {
-	itr.Settings.SetRetain(value)
+	if value {
+		itr.Settings.SetSuffix(render.DefaultSuffix)
+	} else {
+		itr.Settings.SetSuffix("\r\033[K")
+	}
 }
 
 // SetEqualTo adds an extra step to the stop value
@@ -200,6 +206,25 @@ func (itr *Iterator) SetEqualTo() {
 	}
 
 	itr.Values.SetStop(itr.Values.GetStop() + itr.Values.GetStep())
+}
+
+// Multi enables multiple progress bars to be displayed at the same time.
+// It should be called before Initialize on the nested pbar object
+func (itr *Iterator) Multi() {
+	if err := itr.render("\n\033[K"); err != nil {
+		panic(fmt.Sprintf("Error in rendering: %v", err))
+	}
+
+	itr.Settings.SetSuffix("\033[1A")
+}
+
+// MultiEnd enables you to escape nicely out of the multiple progress bars.
+// If using the multiple option, this is the recommended way to finish.
+// Note this should be called after the outer-most loop has completed.
+func (itr *Iterator) MultiEnd() {
+	if err := itr.render("\033[1B\n"); err != nil {
+		panic(fmt.Sprintf("Error in rendering: %v", err))
+	}
 }
 
 // progress moves the iteration sequence forward by altering the
@@ -221,14 +246,8 @@ func (itr *Iterator) progress() error {
 	}
 
 	if current == stop {
-		if !itr.Settings.GetRetain() {
-			if err := itr.render(fmt.Sprintf("\r%s", strings.Repeat(" ", len(bar)))); err != nil {
-				return err
-			}
-		} else {
-			if err := itr.render(fmt.Sprintf("\n")); err != nil {
-				return err
-			}
+		if err := itr.render(itr.Settings.GetSuffix()); err != nil {
+			return err
 		}
 	}
 
@@ -239,8 +258,12 @@ func (itr *Iterator) progress() error {
 
 // render writes the relevant string to the relevant writer
 func (itr *Iterator) render(s string) error {
-	err := itr.Write.WriteString(fmt.Sprintf("\r%s", s))
-	if err != nil {
+	if itr.Write == nil {
+		return errors.New("Write is nil!")
+	}
+
+	if err := itr.Write.WriteString(fmt.Sprintf("\r%s", s)); err != nil {
+		fmt.Println(err)
 		return err
 	}
 

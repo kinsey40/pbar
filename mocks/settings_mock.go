@@ -128,16 +128,16 @@ func (mr *MockSettingsMockRecorder) SetRParen(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetRParen", reflect.TypeOf((*MockSettings)(nil).SetRParen), arg0)
 }
 
-// SetRetain mocks base method
-func (m *MockSettings) SetRetain(arg0 bool) {
+// SetSuffix mocks base method
+func (m *MockSettings) SetSuffix(arg0 string) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetRetain", arg0)
+	m.ctrl.Call(m, "SetSuffix", arg0)
 }
 
-// SetRetain indicates an expected call of SetRetain
-func (mr *MockSettingsMockRecorder) SetRetain(arg0 interface{}) *gomock.Call {
+// SetSuffix indicates an expected call of SetSuffix
+func (mr *MockSettingsMockRecorder) SetSuffix(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetRetain", reflect.TypeOf((*MockSettings)(nil).SetRetain), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetSuffix", reflect.TypeOf((*MockSettings)(nil).SetSuffix), arg0)
 }
 
 // GetDescription mocks base method
@@ -252,18 +252,18 @@ func (mr *MockSettingsMockRecorder) GetRParen() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRParen", reflect.TypeOf((*MockSettings)(nil).GetRParen))
 }
 
-// GetRetain mocks base method
-func (m *MockSettings) GetRetain() bool {
+// GetSuffix mocks base method
+func (m *MockSettings) GetSuffix() string {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetRetain")
-	ret0, _ := ret[0].(bool)
+	ret := m.ctrl.Call(m, "GetSuffix")
+	ret0, _ := ret[0].(string)
 	return ret0
 }
 
-// GetRetain indicates an expected call of GetRetain
-func (mr *MockSettingsMockRecorder) GetRetain() *gomock.Call {
+// GetSuffix indicates an expected call of GetSuffix
+func (mr *MockSettingsMockRecorder) GetSuffix() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRetain", reflect.TypeOf((*MockSettings)(nil).GetRetain))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSuffix", reflect.TypeOf((*MockSettings)(nil).GetSuffix))
 }
 
 // CreateBarString mocks base method

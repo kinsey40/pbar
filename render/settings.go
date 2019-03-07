@@ -40,14 +40,14 @@ import (
 // The default values for all the parameter settings
 var (
 	DefaultDescription              = ""
-	DefaultFinishedIterationSymbol  = "#"
-	DefaultCurrentIterationSymbol   = "#"
-	DefaultRemainingIterationSymbol = "-"
+	DefaultFinishedIterationSymbol  = "\u2588"
+	DefaultCurrentIterationSymbol   = "\u2588"
+	DefaultRemainingIterationSymbol = " "
 	DefaultLParen                   = "|"
 	DefaultRParen                   = "|"
 	DefaultMaxLineSize              = 80
 	DefaultLineSize                 = 10
-	DefaultRetain                   = true
+	DefaultSuffix                   = "\n"
 )
 
 // Settings enables the setting and getting the setting parameters
@@ -62,7 +62,7 @@ type Settings interface {
 	SetMaxLineSize(int)
 	SetLParen(string)
 	SetRParen(string)
-	SetRetain(bool)
+	SetSuffix(string)
 
 	GetDescription() string
 	GetFinishedIterationSymbol() string
@@ -72,7 +72,7 @@ type Settings interface {
 	GetMaxLineSize() int
 	GetLParen() string
 	GetRParen() string
-	GetRetain() bool
+	GetSuffix() string
 
 	CreateBarString(int) string
 }
@@ -87,7 +87,7 @@ type Set struct {
 	MaxLineSize              int
 	LParen                   string
 	RParen                   string
-	Retain                   bool
+	Suffix                   string
 }
 
 // NewSettings creates a Settings interface
@@ -101,7 +101,7 @@ func NewSettings() Settings {
 	s.MaxLineSize = DefaultMaxLineSize
 	s.LParen = DefaultLParen
 	s.RParen = DefaultRParen
-	s.Retain = DefaultRetain
+	s.Suffix = DefaultSuffix
 
 	return s
 }
@@ -154,9 +154,15 @@ func (s *Set) SetRParen(str string) {
 	s.RParen = str
 }
 
-// SetRetain sets the Retain value
-func (s *Set) SetRetain(value bool) {
-	s.Retain = value
+// SetSuffix sets the Retain value
+func (s *Set) SetSuffix(value string) {
+	if strings.Contains(s.Suffix, "[1A") {
+		s.Suffix = value + s.Suffix
+	} else if strings.Contains(s.Suffix, "[K") {
+		s.Suffix += value
+	} else {
+		s.Suffix = value
+	}
 }
 
 // GetDescription gets the Description value
@@ -199,9 +205,9 @@ func (s *Set) GetRParen() string {
 	return s.RParen
 }
 
-// GetRetain gets the Retain value
-func (s *Set) GetRetain() bool {
-	return s.Retain
+// GetSuffix gets the Retain value
+func (s *Set) GetSuffix() string {
+	return s.Suffix
 }
 
 // CreateBarString creates the actual 'bar' within the progress bar

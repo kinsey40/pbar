@@ -40,6 +40,7 @@
 package main
 
 import (
+	"sync"
 	"time"
 
 	"github.com/kinsey40/pbar"
@@ -146,7 +147,67 @@ func iterateUsingValues() {
 	}
 }
 
+func multipleProgressBars() {
+	x := []int{1, 2, 3}
+	y := []int{1, 2, 3}
+	z := []int{1, 2, 3}
+
+	p, _ := pbar.Pbar(x)
+	p.Initialize()
+	for range x {
+		pb, _ := pbar.Pbar(z)
+		pb.Multi()
+		pb.Initialize()
+		for range z {
+			pba, _ := pbar.Pbar(y)
+			pba.Multi()
+			pba.Initialize()
+			for range y {
+				time.Sleep(time.Second * 1)
+				pba.Update()
+			}
+			pb.Update()
+		}
+		p.Update()
+	}
+
+	p.MultiEnd()
+}
+
+// Threaded bars currently does not work correctly. See the Issues board.
+func threadedBars() {
+	var wg sync.WaitGroup
+	x := []int{1, 2, 3, 4, 5}
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		p, _ := pbar.Pbar(x)
+		p.Initialize()
+		for range x {
+			time.Sleep(time.Second * 1)
+			p.Update()
+		}
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		p, _ := pbar.Pbar(x)
+		p.Initialize()
+		for range x {
+			time.Sleep(time.Second * 2)
+			p.Update()
+		}
+	}()
+
+	wg.Wait()
+}
+
 func main() {
+	multipleProgressBars()
+	// threadedBars()
+
 	iterateUsingArray()
 	iterateUsingString()
 	iterateUsingMap()

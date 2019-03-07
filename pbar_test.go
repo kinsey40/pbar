@@ -128,7 +128,7 @@ func TestUpdate(t *testing.T) {
 		maxLineSize              int
 		lParen                   string
 		rParen                   string
-		retain                   bool
+		suffix                   string
 		elapsedSecs              int64
 		elapsedNanoSecs          int64
 		buffer                   *bytes.Buffer
@@ -136,12 +136,12 @@ func TestUpdate(t *testing.T) {
 		expectedEndCurrentVal    float64
 		expectedOutput           string
 	}{
-		{0.0, 5.0, 1.0, 0.0, "", "#", "#", "-", 10, 80, "|", "|", true, 0, 0, new(bytes.Buffer), false, 1.0, "\r|----------| 0.0/5.0 0.0% [elapsed: 00m:00s, left: N/A, N/A iters/sec]"},
-		{0.0, 5.0, 1.0, 1.0, "", "#", "#", "-", 10, 80, "|", "|", true, 2, 0, new(bytes.Buffer), false, 2.0, "\r|##--------| 1.0/5.0 20.0% [elapsed: 00m:02s, left: 00m:08s, 0.50 iters/sec]"},
-		{0.0, 5.0, 1.0, 5.0, "", "#", "#", "-", 10, 80, "|", "|", true, 4, 0, new(bytes.Buffer), false, 6.0, "\r|##########| 5.0/5.0 100.0% [elapsed: 00m:04s, left: 00m:00s, 1.25 iters/sec]\r\n"},
-		{0.0, 5.0, 1.0, 5.0, "", "#", "#", "-", 10, 80, "|", "|", false, 4, 0, new(bytes.Buffer), false, 6.0, "\r|##########| 5.0/5.0 100.0% [elapsed: 00m:04s, left: 00m:00s, 1.25 iters/sec]\r\r                                                                             "},
-		{1.0, 5.0, 1.0, 0.0, "", "#", "#", "-", 10, 80, "|", "|", true, 0, 0, new(bytes.Buffer), true, 1.0, ""},
-		{1.0, 5.0, 1.0, 6.0, "", "#", "#", "-", 10, 80, "|", "|", true, 0, 0, new(bytes.Buffer), true, 1.0, ""},
+		{0.0, 5.0, 1.0, 0.0, "", "#", "#", "-", 10, 80, "|", "|", "\n", 0, 0, new(bytes.Buffer), false, 1.0, "\r|----------| 0.0/5.0 0.0% [elapsed: 00m:00s, left: N/A, N/A iters/sec]"},
+		{0.0, 5.0, 1.0, 1.0, "", "#", "#", "-", 10, 80, "|", "|", "\n", 2, 0, new(bytes.Buffer), false, 2.0, "\r|##--------| 1.0/5.0 20.0% [elapsed: 00m:02s, left: 00m:08s, 0.50 iters/sec]"},
+		{0.0, 5.0, 1.0, 5.0, "", "#", "#", "-", 10, 80, "|", "|", "\n", 4, 0, new(bytes.Buffer), false, 6.0, "\r|##########| 5.0/5.0 100.0% [elapsed: 00m:04s, left: 00m:00s, 1.25 iters/sec]\r\n"},
+		{0.0, 5.0, 1.0, 5.0, "", "#", "#", "-", 10, 80, "|", "|", "\r\033[K", 4, 0, new(bytes.Buffer), false, 6.0, "\r|##########| 5.0/5.0 100.0% [elapsed: 00m:04s, left: 00m:00s, 1.25 iters/sec]\r\r\x1b[K"},
+		{1.0, 5.0, 1.0, 0.0, "", "#", "#", "-", 10, 80, "|", "|", "\n", 0, 0, new(bytes.Buffer), true, 1.0, ""},
+		{1.0, 5.0, 1.0, 6.0, "", "#", "#", "-", 10, 80, "|", "|", "\n", 0, 0, new(bytes.Buffer), true, 1.0, ""},
 	}
 
 	for _, testCase := range testCases {
@@ -170,7 +170,8 @@ func TestUpdate(t *testing.T) {
 			MaxLineSize:              testCase.maxLineSize,
 			LParen:                   testCase.lParen,
 			RParen:                   testCase.rParen,
-			Retain:                   testCase.retain,
+			Suffix:                   testCase.suffix,
+			// Retain:                   testCase.retain,
 		}
 
 		itr := pbar.Iterator{
@@ -375,21 +376,22 @@ func TestSetRParenSymbol(t *testing.T) {
 func TestSetRetain(t *testing.T) {
 	itr := &pbar.Iterator{}
 	testCases := []struct {
-		value bool
+		value          bool
+		expectedSuffix string
 	}{
-		{true},
-		{false},
+		{true, render.DefaultSuffix},
+		{false, "\r\033[K"},
 	}
 
 	for _, testCase := range testCases {
 		itr.Settings = &render.Set{}
 		itr.SetRetain(testCase.value)
-		message := fmt.Sprintf("Retains not equal; expected: %v, got: %v", testCase.value, itr.Settings.GetRetain())
+		message := fmt.Sprintf("Retains' suffix not equal; expected: %v, got: %v", testCase.expectedSuffix, itr.Settings.GetSuffix())
 
 		assert.Equal(
 			t,
-			testCase.value,
-			itr.Settings.GetRetain(),
+			testCase.expectedSuffix,
+			itr.Settings.GetSuffix(),
 			message,
 		)
 	}
@@ -429,5 +431,67 @@ func TestSetEqualTo(t *testing.T) {
 			)
 		}
 
+	}
+}
+
+func TestMulti(t *testing.T) {
+	itr := &pbar.Iterator{}
+	testCases := []struct {
+		buffer         *bytes.Buffer
+		expectedOutput string
+		expectedSuffix string
+		expectPanic    bool
+	}{
+		{new(bytes.Buffer), "\r\n\033[K", "\033[1A", false},
+		{new(bytes.Buffer), "", "", true},
+	}
+
+	for _, testCase := range testCases {
+		if testCase.expectPanic {
+			itr.Write = nil
+			assert.Panics(t, func() { itr.Multi() }, fmt.Sprintf("Panic not raised!"))
+		} else {
+			itr.Settings = &render.Set{}
+			itr.Write = &render.Writing{
+				W: testCase.buffer,
+			}
+			assert.NotPanics(t, func() { itr.Multi() }, fmt.Sprintf("Unexpected Panic"))
+
+			got := testCase.buffer.String()
+			message := fmt.Sprintf("Outputted result not equal; expected: %v, got: %v", testCase.expectedOutput, got)
+			suffixMessage := fmt.Sprintf("Suffix not equal; expected: %v; got: %v", testCase.expectedSuffix, itr.Settings.GetSuffix())
+
+			assert.Equal(t, testCase.expectedOutput, got, message)
+			assert.Equal(t, testCase.expectedSuffix, itr.Settings.GetSuffix(), suffixMessage)
+		}
+	}
+}
+
+func TestMultiEnd(t *testing.T) {
+	itr := &pbar.Iterator{}
+	testCases := []struct {
+		buffer         *bytes.Buffer
+		expectedOutput string
+		expectPanic    bool
+	}{
+		{new(bytes.Buffer), "\r\033[1B\n", false},
+		{new(bytes.Buffer), "", true},
+	}
+
+	for _, testCase := range testCases {
+		if testCase.expectPanic {
+			itr.Write = nil
+			assert.Panics(t, func() { itr.MultiEnd() }, fmt.Sprintf("Panic not raised!"))
+		} else {
+			itr.Write = &render.Writing{
+				W: testCase.buffer,
+			}
+
+			assert.NotPanics(t, func() { itr.MultiEnd() }, fmt.Sprintf("Unexpected Panic"))
+			got := testCase.buffer.String()
+			message := fmt.Sprintf("Outputted result not equal; expected: %v, got: %v", testCase.expectedOutput, got)
+
+			assert.Equal(t, testCase.expectedOutput, got, message)
+		}
 	}
 }

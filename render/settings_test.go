@@ -248,21 +248,25 @@ func TestSetRParen(t *testing.T) {
 	}
 }
 
-func TestSetRetain(t *testing.T) {
+func TestSetSuffix(t *testing.T) {
 	testCases := []struct {
-		input          bool
-		expectedOutput bool
+		suffix         string
+		input          string
+		expectedOutput string
 	}{
-		{true, true},
-		{false, false},
+		{"Hello", "Hello", "Hello"},
+		{"Hello[1A", "Hello", "HelloHello[1A"},
+		{"Hello[K", "Hello", "Hello[KHello"},
 	}
 
 	for _, testCase := range testCases {
-		s := &render.Set{}
-		s.SetRetain(testCase.input)
-		message := fmt.Sprintf("RParen incorrectly set expected: %v; got %v", testCase.expectedOutput, s.RParen)
+		s := &render.Set{
+			Suffix: testCase.suffix,
+		}
+		s.SetSuffix(testCase.input)
+		message := fmt.Sprintf("Suffix incorrectly set expected: %v; got %v", testCase.expectedOutput, s.Suffix)
 
-		assert.Equal(t, testCase.expectedOutput, s.Retain, message)
+		assert.Equal(t, testCase.expectedOutput, s.Suffix, message)
 	}
 }
 
@@ -416,20 +420,19 @@ func TestGetRParen(t *testing.T) {
 	}
 }
 
-func TestGetRetain(t *testing.T) {
+func TestGetSuffix(t *testing.T) {
 	testCases := []struct {
-		input          bool
-		expectedOutput bool
+		input          string
+		expectedOutput string
 	}{
-		{true, true},
-		{false, false},
+		{"Hello", "Hello"},
 	}
 
 	for _, testCase := range testCases {
 		s := &render.Set{}
-		s.Retain = testCase.input
-		output := s.GetRetain()
-		message := fmt.Sprintf("Retain incorrect get expected: %v, got: %v", testCase.expectedOutput, output)
+		s.Suffix = testCase.input
+		output := s.GetSuffix()
+		message := fmt.Sprintf("Suffix incorrect get expected: %v, got: %v", testCase.expectedOutput, output)
 
 		assert.Equal(t, testCase.expectedOutput, output, message)
 	}
