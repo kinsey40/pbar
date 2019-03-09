@@ -166,6 +166,29 @@ func TestRemaining(t *testing.T) {
 	}
 }
 
+func TestIsStartTimeSet(t *testing.T) {
+	testCases := []struct {
+		input       time.Time
+		expectError bool
+	}{
+		{time.Time{}, true},
+		{time.Now(), false},
+	}
+
+	for _, testCase := range testCases {
+		c := &render.ClockVal{
+			StartTime: testCase.input,
+		}
+
+		err := c.IsStartTimeSet()
+		if testCase.expectError {
+			assert.Error(t, err, fmt.Sprintf("Expected error not returned"))
+		} else {
+			assert.NoError(t, err, fmt.Sprintf("Unexpected error returned: %v", err))
+		}
+	}
+}
+
 func TestFormat(t *testing.T) {
 	testCases := []struct {
 		timeValue      time.Duration
