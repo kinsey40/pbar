@@ -143,22 +143,24 @@ func TestUpdate(t *testing.T) {
 		elapsedSecs              int64
 		elapsedNanoSecs          int64
 		buffer                   *bytes.Buffer
+		startTime                time.Time
 		expectError              bool
 		expectedEndCurrentVal    float64
 		expectedOutput           string
 	}{
-		{0.0, 5.0, 1.0, 0.0, "", "#", "#", "-", 10, 80, "|", "|", "\n", 0, 0, new(bytes.Buffer), false, 1.0, "\r|----------| 0.0/5.0 0.0% [elapsed: 00m:00s, left: N/A, N/A iters/sec]"},
-		{0.0, 5.0, 1.0, 1.0, "", "#", "#", "-", 10, 80, "|", "|", "\n", 2, 0, new(bytes.Buffer), false, 2.0, "\r|##--------| 1.0/5.0 20.0% [elapsed: 00m:02s, left: 00m:08s, 0.50 iters/sec]"},
-		{0.0, 5.0, 1.0, 5.0, "", "#", "#", "-", 10, 80, "|", "|", "\n", 4, 0, new(bytes.Buffer), false, 6.0, "\r|##########| 5.0/5.0 100.0% [elapsed: 00m:04s, left: 00m:00s, 1.25 iters/sec]\r\n"},
-		{0.0, 5.0, 1.0, 5.0, "", "#", "#", "-", 10, 80, "|", "|", "\r\033[K", 4, 0, new(bytes.Buffer), false, 6.0, "\r|##########| 5.0/5.0 100.0% [elapsed: 00m:04s, left: 00m:00s, 1.25 iters/sec]\r\r\x1b[K"},
-		{1.0, 5.0, 1.0, 0.0, "", "#", "#", "-", 10, 80, "|", "|", "\n", 0, 0, new(bytes.Buffer), true, 1.0, ""},
-		{1.0, 5.0, 1.0, 6.0, "", "#", "#", "-", 10, 80, "|", "|", "\n", 0, 0, new(bytes.Buffer), true, 1.0, ""},
+		{0.0, 5.0, 1.0, 0.0, "", "#", "#", "-", 10, 80, "|", "|", "\n", 0, 0, new(bytes.Buffer), time.Unix(0, 0), false, 1.0, "\r|----------| 0.0/5.0 0.0% [elapsed: 00m:00s, left: N/A, N/A iters/sec]"},
+		{0.0, 5.0, 1.0, 1.0, "", "#", "#", "-", 10, 80, "|", "|", "\n", 2, 0, new(bytes.Buffer), time.Unix(0, 0), false, 2.0, "\r|##--------| 1.0/5.0 20.0% [elapsed: 00m:02s, left: 00m:08s, 0.50 iters/sec]"},
+		{0.0, 5.0, 1.0, 5.0, "", "#", "#", "-", 10, 80, "|", "|", "\n", 4, 0, new(bytes.Buffer), time.Unix(0, 0), false, 6.0, "\r|##########| 5.0/5.0 100.0% [elapsed: 00m:04s, left: 00m:00s, 1.25 iters/sec]\r\n"},
+		{0.0, 5.0, 1.0, 5.0, "", "#", "#", "-", 10, 80, "|", "|", "\r\033[K", 4, 0, new(bytes.Buffer), time.Unix(0, 0), false, 6.0, "\r|##########| 5.0/5.0 100.0% [elapsed: 00m:04s, left: 00m:00s, 1.25 iters/sec]\r\r\x1b[K"},
+		{1.0, 5.0, 1.0, 0.0, "", "#", "#", "-", 10, 80, "|", "|", "\n", 0, 0, new(bytes.Buffer), time.Unix(0, 0), true, 1.0, ""},
+		{1.0, 5.0, 1.0, 6.0, "", "#", "#", "-", 10, 80, "|", "|", "\n", 0, 0, new(bytes.Buffer), time.Unix(0, 0), true, 1.0, ""},
+		{1.0, 5.0, 1.0, 1.0, "", "#", "#", "-", 10, 80, "|", "|", "\n", 0, 0, new(bytes.Buffer), time.Time{}, true, 1.0, ""},
 	}
 
 	for _, testCase := range testCases {
 		render.NowTime = func() time.Time { return time.Unix(testCase.elapsedSecs, testCase.elapsedNanoSecs) }
 		c := &render.ClockVal{
-			StartTime: time.Unix(0, 0),
+			StartTime: testCase.startTime,
 		}
 
 		v := &render.Vals{
@@ -182,7 +184,6 @@ func TestUpdate(t *testing.T) {
 			LParen:                   testCase.lParen,
 			RParen:                   testCase.rParen,
 			Suffix:                   testCase.suffix,
-			// Retain:                   testCase.retain,
 		}
 
 		itr := pbar.Iterator{
@@ -190,6 +191,11 @@ func TestUpdate(t *testing.T) {
 			Settings: s,
 			Clock:    c,
 			Write:    w,
+		}
+
+		if testCase.startTime.IsZero() {
+			assert.Panics(t, func() { itr.Update() }, fmt.Sprintf("Expected Panic not raised"))
+			continue
 		}
 
 		err := itr.Update()

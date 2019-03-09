@@ -133,7 +133,11 @@ func (itr *Iterator) Initialize() error {
 // be performed at the end of the iteration sequence
 // (i.e. at the end of the for-loop).
 func (itr *Iterator) Update() error {
+	if err := itr.Clock.IsStartTimeSet(); err != nil {
+		panic(err)
+	}
 	itr.Clock.Now()
+
 	return itr.progress()
 }
 

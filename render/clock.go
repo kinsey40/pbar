@@ -34,6 +34,7 @@
 package render
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"time"
@@ -52,6 +53,7 @@ type Clock interface {
 	Seconds(time.Duration) float64
 	Remaining(float64) time.Duration
 	Format(time.Duration) string
+	IsStartTimeSet() error
 
 	CreateSpeedMeter(float64, float64, float64) string
 }
@@ -80,6 +82,16 @@ func (c *ClockVal) Now() {
 // and the start time.
 func (c *ClockVal) Subtract() time.Duration {
 	return c.CurrentTime.Sub(c.StartTime)
+}
+
+// IsStartTimeSet checks if the start time is set and returns an
+// error if not
+func (c *ClockVal) IsStartTimeSet() error {
+	if c.StartTime.IsZero() {
+		return errors.New("You must call Initialize before performing Updates!")
+	}
+
+	return nil
 }
 
 // SetStartTime enables the StartTime value to be set in the clock

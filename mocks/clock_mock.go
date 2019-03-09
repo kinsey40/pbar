@@ -127,6 +127,20 @@ func (mr *MockClockMockRecorder) Format(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Format", reflect.TypeOf((*MockClock)(nil).Format), arg0)
 }
 
+// IsStartTimeSet mocks base method
+func (m *MockClock) IsStartTimeSet() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsStartTimeSet")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// IsStartTimeSet indicates an expected call of IsStartTimeSet
+func (mr *MockClockMockRecorder) IsStartTimeSet() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsStartTimeSet", reflect.TypeOf((*MockClock)(nil).IsStartTimeSet))
+}
+
 // CreateSpeedMeter mocks base method
 func (m *MockClock) CreateSpeedMeter(arg0, arg1, arg2 float64) string {
 	m.ctrl.T.Helper()
