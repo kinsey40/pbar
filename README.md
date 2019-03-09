@@ -8,6 +8,8 @@
 
 Welcome to Pbar! A simple, easy-to-use, flexible terminal progress bar for the Go/Golang programming language! 
 
+![Imgur Image](https://i.imgur.com/4HV6viC.jpg)
+
 ## Requirements
 Pbar is tested to work on Go v1.10+, previous versions are not guaranteed to be compatible. 
 
