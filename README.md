@@ -30,6 +30,10 @@ if err != nil {
     panic(err)
 }
 
+// Alter pbar settings (e.g. add a description)
+p.SetDescription("Pbar")
+
+// Initialize just before for-loop
 p.Initialize()
 for _, v := range x {
     // Do something...
