@@ -153,13 +153,16 @@ func multipleProgressBars() {
 	z := []int{1, 2, 3}
 
 	p, _ := pbar.Pbar(x)
+	p.SetDescription("First")
 	p.Initialize()
 	for range x {
 		pb, _ := pbar.Pbar(z)
+		pb.SetDescription("Second")
 		pb.Multi()
 		pb.Initialize()
 		for range z {
 			pba, _ := pbar.Pbar(y)
+			pba.SetDescription("Third")
 			pba.Multi()
 			pba.Initialize()
 			for range y {

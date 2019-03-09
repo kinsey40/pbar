@@ -34,12 +34,19 @@
 package render_test
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 
 	"github.com/kinsey40/pbar/render"
 	"github.com/stretchr/testify/assert"
 )
+
+type MockTerminal struct {
+	toSend       []byte
+	bytesPerRead int
+	received     []byte
+}
 
 func TestNewSettings(t *testing.T) {
 	s := render.NewSettings()
@@ -435,6 +442,35 @@ func TestGetSuffix(t *testing.T) {
 		message := fmt.Sprintf("Suffix incorrect get expected: %v, got: %v", testCase.expectedOutput, output)
 
 		assert.Equal(t, testCase.expectedOutput, output, message)
+	}
+}
+
+func TestSetIdealLineSize(t *testing.T) {
+	testCases := []struct {
+		description      string
+		lParen           string
+		rParen           string
+		width            int
+		terminalErr      error
+		expectedLineSize int
+	}{
+		{"", "|", "|", 80, nil, 80 - render.NumberOfCharacters - render.NumberOfCharactersBuffer},
+		{"", "|", "|", 80, errors.New("An error"), 80 - render.NumberOfCharacters - render.NumberOfCharactersBuffer},
+	}
+
+	for _, testCase := range testCases {
+		s := &render.Set{}
+		render.GetTerminal = func() uintptr { return 0 }
+		render.TerminalSize = func(_ int) (int, int, error) { return testCase.width, 0, testCase.terminalErr }
+
+		err := s.SetIdealLineSize()
+		if testCase.terminalErr != nil {
+			assert.Error(t, err, fmt.Sprintf("Expected error not raised"))
+		} else {
+			message := fmt.Sprintf("LineSize incorrectly set through IdealLineSize expected: %v; got %v", testCase.expectedLineSize, s.LineSize)
+			assert.NoError(t, err, fmt.Sprintf("Unexpected error raised!"))
+			assert.Equal(t, testCase.expectedLineSize, s.LineSize, message)
+		}
 	}
 }
 

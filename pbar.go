@@ -122,6 +122,10 @@ func Pbar(values ...interface{}) (Iterate, error) {
 // iterations within the progress bar.
 func (itr *Iterator) Initialize() error {
 	itr.Clock.SetStartTime()
+	if err := itr.Settings.SetIdealLineSize(); err != nil {
+		return err
+	}
+
 	return itr.Update()
 }
 
@@ -263,7 +267,6 @@ func (itr *Iterator) render(s string) error {
 	}
 
 	if err := itr.Write.WriteString(fmt.Sprintf("\r%s", s)); err != nil {
-		fmt.Println(err)
 		return err
 	}
 

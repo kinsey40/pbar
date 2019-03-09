@@ -140,6 +140,20 @@ func (mr *MockSettingsMockRecorder) SetSuffix(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetSuffix", reflect.TypeOf((*MockSettings)(nil).SetSuffix), arg0)
 }
 
+// SetIdealLineSize mocks base method
+func (m *MockSettings) SetIdealLineSize() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetIdealLineSize")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetIdealLineSize indicates an expected call of SetIdealLineSize
+func (mr *MockSettingsMockRecorder) SetIdealLineSize() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetIdealLineSize", reflect.TypeOf((*MockSettings)(nil).SetIdealLineSize))
+}
+
 // GetDescription mocks base method
 func (m *MockSettings) GetDescription() string {
 	m.ctrl.T.Helper()

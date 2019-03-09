@@ -34,6 +34,7 @@ package pbar_test
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -58,11 +59,13 @@ func TestInitialize(t *testing.T) {
 		lParen                   string
 		rParen                   string
 		buffer                   *bytes.Buffer
+		terminalError            bool
 		expectError              bool
 		expectedOutput           string
 	}{
-		{0.0, 5.0, 1.0, 0.0, "", "#", "#", "-", 10, 80, "|", "|", new(bytes.Buffer), false, "\r|----------| 0.0/5.0 0.0% [elapsed: 00m:00s, left: N/A, N/A iters/sec]"},
-		{1.0, 5.0, 1.0, 0.0, "", "#", "#", "-", 10, 80, "|", "|", new(bytes.Buffer), true, ""},
+		{0.0, 5.0, 1.0, 0.0, "", "#", "#", "-", 10, 10, "|", "|", new(bytes.Buffer), false, false, "\r|----------| 0.0/5.0 0.0% [elapsed: 00m:00s, left: N/A, N/A iters/sec]"},
+		{1.0, 5.0, 1.0, 0.0, "", "#", "#", "-", 10, 10, "|", "|", new(bytes.Buffer), false, true, ""},
+		{0.0, 5.0, 1.0, 0.0, "", "#", "#", "-", 10, 10, "|", "|", new(bytes.Buffer), true, true, "\r|----------| 0.0/5.0 0.0% [elapsed: 00m:00s, left: N/A, N/A iters/sec]"},
 	}
 
 	for _, testCase := range testCases {
@@ -90,6 +93,14 @@ func TestInitialize(t *testing.T) {
 
 		c := &render.ClockVal{}
 
+		render.GetTerminal = func() uintptr { return 0 }
+		width := testCase.lineSize + len(testCase.description) + len(testCase.rParen) + len(testCase.lParen) + render.NumberOfCharacters + render.NumberOfCharactersBuffer
+		if testCase.terminalError {
+			render.TerminalSize = func(_ int) (int, int, error) { return width, 0, errors.New("An error") }
+		} else {
+			render.TerminalSize = func(_ int) (int, int, error) { return width, 0, nil }
+		}
+
 		itr := &pbar.Iterator{
 			Clock:    c,
 			Settings: s,
@@ -101,7 +112,7 @@ func TestInitialize(t *testing.T) {
 		got := testCase.buffer.String()
 
 		assert.NotNil(t, c.StartTime, fmt.Sprintf("StartTime is nil!"))
-		if testCase.expectError {
+		if testCase.expectError || testCase.terminalError {
 			assert.Error(t, err, fmt.Sprintf("Expected Error not raised"))
 		} else {
 			assert.NoError(t, err, fmt.Sprintf("Unexpected error raised: %v", err))

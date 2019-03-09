@@ -34,7 +34,17 @@ package render
 
 import (
 	"fmt"
+	"os"
 	"strings"
+
+	"golang.org/x/crypto/ssh/terminal"
+)
+
+// NumberOfCharacters is the number of characters that the pbar display takes up
+// NumberOfCharactersBuffer is the number of characters to leave out (for large numbers)
+const (
+	NumberOfCharacters       = 66
+	NumberOfCharactersBuffer = 12
 )
 
 // The default values for all the parameter settings
@@ -50,6 +60,12 @@ var (
 	DefaultSuffix                   = "\n"
 )
 
+// Terminal and os functions used to examine terminal size
+var (
+	TerminalSize = terminal.GetSize
+	GetTerminal  = os.Stdin.Fd
+)
+
 // Settings enables the setting and getting the setting parameters
 // for the progress bar. It also enables the creation of the bar
 // string
@@ -63,6 +79,7 @@ type Settings interface {
 	SetLParen(string)
 	SetRParen(string)
 	SetSuffix(string)
+	SetIdealLineSize() error
 
 	GetDescription() string
 	GetFinishedIterationSymbol() string
@@ -163,6 +180,19 @@ func (s *Set) SetSuffix(value string) {
 	} else {
 		s.Suffix = value
 	}
+}
+
+// SetIdealLineSize sets the line size to be almost the same size as the current terminal
+func (s *Set) SetIdealLineSize() error {
+	width, _, err := TerminalSize(int(GetTerminal()))
+	if err != nil {
+		return err
+	}
+
+	idealLength := width - len(s.Description) - len(s.RParen) - len(s.LParen) - NumberOfCharacters - NumberOfCharactersBuffer
+	s.LineSize = idealLength
+
+	return nil
 }
 
 // GetDescription gets the Description value
