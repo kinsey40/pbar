@@ -40,6 +40,7 @@
 package main
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
@@ -57,7 +58,7 @@ func iterateUsingArray() {
 	p.SetDescription("Array")
 	p.Initialize()
 	for range x {
-		time.Sleep(time.Second * 1)
+		time.Sleep(time.Millisecond * 500)
 		p.Update()
 	}
 }
@@ -73,7 +74,7 @@ func iterateUsingString() {
 	p.SetDescription("String")
 	p.Initialize()
 	for range x {
-		time.Sleep(time.Second * 1)
+		time.Sleep(time.Millisecond * 500)
 		p.Update()
 	}
 }
@@ -89,7 +90,7 @@ func iterateUsingSlice() {
 	p.SetDescription("Slice")
 	p.Initialize()
 	for range x[:] {
-		time.Sleep(time.Second * 1)
+		time.Sleep(time.Millisecond * 500)
 		p.Update()
 	}
 }
@@ -111,7 +112,7 @@ func iterateUsingChannel() {
 	p.SetDescription("Channel")
 	p.Initialize()
 	for range x {
-		time.Sleep(time.Second * 1)
+		time.Sleep(time.Millisecond * 500)
 		p.Update()
 	}
 }
@@ -127,7 +128,7 @@ func iterateUsingMap() {
 	p.SetDescription("Map")
 	p.Initialize()
 	for range x {
-		time.Sleep(time.Second * 1)
+		time.Sleep(time.Millisecond * 500)
 		p.Update()
 	}
 }
@@ -142,7 +143,7 @@ func iterateUsingValues() {
 	p.SetDescription("Values")
 	p.Initialize()
 	for i := 0; i < 5; i++ {
-		time.Sleep(time.Second * 1)
+		time.Sleep(time.Millisecond * 500)
 		p.Update()
 	}
 }
@@ -166,7 +167,7 @@ func multipleProgressBars() {
 			pba.Multi()
 			pba.Initialize()
 			for range y {
-				time.Sleep(time.Second * 1)
+				time.Sleep(time.Millisecond * 500)
 				pba.Update()
 			}
 			pb.Update()
@@ -188,7 +189,7 @@ func threadedBars() {
 		p, _ := pbar.Pbar(x)
 		p.Initialize()
 		for range x {
-			time.Sleep(time.Second * 1)
+			time.Sleep(time.Millisecond * 500)
 			p.Update()
 		}
 	}()
@@ -199,7 +200,7 @@ func threadedBars() {
 		p, _ := pbar.Pbar(x)
 		p.Initialize()
 		for range x {
-			time.Sleep(time.Second * 2)
+			time.Sleep(time.Millisecond * 2)
 			p.Update()
 		}
 	}()
@@ -208,13 +209,14 @@ func threadedBars() {
 }
 
 func main() {
-	multipleProgressBars()
-	// threadedBars()
-
 	iterateUsingArray()
 	iterateUsingString()
 	iterateUsingMap()
 	iterateUsingChannel()
 	iterateUsingSlice()
 	iterateUsingValues()
+
+	fmt.Println("\nUsing Multiple Progress Bars:")
+	multipleProgressBars()
+	// threadedBars()
 }
