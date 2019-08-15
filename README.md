@@ -24,22 +24,30 @@ $ go get github.com/kinsey40/pbar
 The file examples/example.go from the projects root directory highlights how the progress bar can be created in a variety of different circumstances. To create a progress bar from an array (as an example) the following is done:
 
 ```go
-import "pbar"
+package main
 
-x := []int{1, 2, 3}
-p, err := pbar.Pbar(x)
-if err != nil {
-    panic(err)
-}
+import (
+	"github.com/kinsey40/pbar"
+	"time"
+)
 
-// Alter pbar settings (e.g. add a description)
-p.SetDescription("Pbar")
+func main() {
+	x := []int{1, 2, 3}
+	p, err := pbar.Pbar(x)
+	if err != nil {
+		panic(err)
+	}
 
-// Initialize just before for-loop
-p.Initialize()
-for _, v := range x {
-    // Do something...
-    p.Update()
+	// Alter pbar settings (e.g. add a description)
+	p.SetDescription("Pbar")
+
+	// Initialize just before for-loop
+	p.Initialize()
+	for range x {
+		// Do something...
+		time.Sleep(time.Millisecond * 1000)
+		p.Update()
+	}
 }
 ```
 
